@@ -1,0 +1,3 @@
+;/*FB_PKG_DELIM*/
+
+__d("LSHasMatchingAttachmentCTA",[],(function(t,n,r,o,a,i){function e(){var e=arguments,t=e[e.length-1],n=[],r=[];return t.sequence([function(o){return t.sequence([function(r){return t.count(t.filter(t.db.table(19).fetch([[[e[0]]],"fk_attachments"]),function(n){return t.i64.eq(n.threadKey,e[0])&&n.attachmentFbid===e[1]})).then(function(e){return n[0]=e})},function(e){return r[0]=t.i64.gt(n[0],t.i64.cast([0,0]))}])},function(e){return t.resolve(r)}])}e.__sproc_name__="LSMailboxHasMatchingAttachmentCTAStoredProcedure",e.__tables__=["attachment_ctas"],a.exports=e}),null);
