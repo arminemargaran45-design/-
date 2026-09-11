@@ -9,7 +9,6 @@ PROJECT_REF="hfcwgsnhwbloksifsgbz"
 EXPORT_ROLE="orvenixa_timeweb_export"
 DIRECT_HOST="db.${PROJECT_REF}.supabase.co"
 POOLER_HOST="aws-0-eu-central-1.pooler.supabase.com"
-CLI_VERSION="2.81.3"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 BACKUP_ROOT="/opt/orvenixa/backups"
 WORK_DIR="${BACKUP_ROOT}/cloud-${STAMP}"
@@ -40,15 +39,8 @@ for service in db auth rest storage realtime; do
   }
 done
 
-echo "[2/6] Установка совместимого Supabase CLI"
-if ! command -v supabase >/dev/null 2>&1; then
-  wget -qO "${WORK_DIR}/supabase-cli.tar.gz" \
-    "https://github.com/supabase/cli/releases/download/v${CLI_VERSION}/supabase_linux_amd64.tar.gz"
-  tar -xzf "${WORK_DIR}/supabase-cli.tar.gz" -C /usr/local/bin supabase
-  chmod 0755 /usr/local/bin/supabase
-fi
-supabase --version
-supabase db dump --help >/dev/null
+echo "[2/6] Подготовка PostgreSQL 17 для совместимого дампа"
+docker pull postgres:17-alpine >/dev/null
 
 echo "[3/6] Подключение к действующей облачной базе только для чтения"
 test_source() {
@@ -73,15 +65,38 @@ else
 fi
 echo "Источник доступен. Пользователей: ${SOURCE_USERS}"
 
-SOURCE_URL="postgresql://${SOURCE_USER}:${SRC_DB_PASSWORD}@${SOURCE_HOST}:5432/postgres?sslmode=require"
+pg_dump_source() {
+  docker run --rm --network host \
+    -e PGPASSWORD="${SRC_DB_PASSWORD}" \
+    -v "${WORK_DIR}:/backup" \
+    postgres:17-alpine \
+    pg_dump \
+    --host="${SOURCE_HOST}" \
+    --port=5432 \
+    --username="${SOURCE_USER}" \
+    --dbname=postgres \
+    --no-owner \
+    --no-privileges \
+    --quote-all-identifiers \
+    "$@"
+}
 
-echo "[4/6] Создание совместимого резервного комплекта"
-supabase db dump --db-url "${SOURCE_URL}" -f "${WORK_DIR}/roles.sql" --role-only
-supabase db dump --db-url "${SOURCE_URL}" -f "${WORK_DIR}/schema.sql"
-supabase db dump --db-url "${SOURCE_URL}" -f "${WORK_DIR}/data.sql" --use-copy --data-only
-unset SOURCE_URL SRC_DB_PASSWORD
+echo "[4/6] Создание резервного комплекта без SET ROLE postgres"
+pg_dump_source --schema=public --schema-only --file=/backup/schema-public.sql
+pg_dump_source --schema=public --data-only --disable-triggers --file=/backup/data-public.sql
+pg_dump_source --table=auth.users --table=auth.identities \
+  --data-only --disable-triggers --file=/backup/data-auth.sql
+pg_dump_source --table=storage.buckets \
+  --data-only --disable-triggers --file=/backup/data-storage-buckets.sql
+pg_dump_source --table=storage.objects \
+  --data-only --disable-triggers --file=/backup/data-storage-objects-pending.sql
+unset SRC_DB_PASSWORD
 
-for file in roles.sql schema.sql data.sql; do
+# The default public schema may be represented as a comment by pg_dump.
+# Recreate it explicitly during restore and remove any duplicate CREATE line.
+sed -i -E '/^CREATE SCHEMA ("public"|public);$/d' "${WORK_DIR}/schema-public.sql"
+
+for file in schema-public.sql data-public.sql data-auth.sql data-storage-buckets.sql data-storage-objects-pending.sql; do
   [[ -s "${WORK_DIR}/${file}" ]] || {
     echo "Пустой файл ${file}"
     exit 1
@@ -95,10 +110,15 @@ docker compose exec -T db pg_dump \
   > "${WORK_DIR}/timeweb-public-before.dump"
 
 {
-  cat "${WORK_DIR}/roles.sql"
-  cat "${WORK_DIR}/schema.sql"
+  echo "DROP SCHEMA IF EXISTS public CASCADE;"
+  echo "CREATE SCHEMA public AUTHORIZATION pg_database_owner;"
+  cat "${WORK_DIR}/schema-public.sql"
+  echo "TRUNCATE TABLE auth.identities, auth.users CASCADE;"
+  echo "TRUNCATE TABLE storage.objects, storage.buckets CASCADE;"
   echo "SET session_replication_role = replica;"
-  cat "${WORK_DIR}/data.sql"
+  cat "${WORK_DIR}/data-auth.sql"
+  cat "${WORK_DIR}/data-storage-buckets.sql"
+  cat "${WORK_DIR}/data-public.sql"
   echo "SET session_replication_role = origin;"
 } | docker compose exec -T db psql \
   --single-transaction \
@@ -112,7 +132,9 @@ docker compose exec -T db psql -U postgres -d postgres -Atqc \
   "select 'auth_users='||(select count(*) from auth.users),
           'profiles='||(select count(*) from public.profiles),
           'organizations='||(select count(*) from public.organizations),
-          'platform_leads='||(select count(*) from public.platform_leads);"
+          'platform_leads='||(select count(*) from public.platform_leads),
+          'storage_buckets='||(select count(*) from storage.buckets);"
 
 echo "Резервная копия сохранена: ${WORK_DIR}"
 echo "MIGRATION_STAGE_1_COMPLETE"
+echo "Примечание: 4 закрытых файла Storage будут перенесены отдельным безопасным этапом."
