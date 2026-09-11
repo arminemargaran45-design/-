@@ -1,0 +1,37 @@
+name: Inspect ORVENIXA production endpoints
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - arminee-portfolio
+    paths:
+      - ".github/workflows/inspect-orvenixa.yml"
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect public frontend dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://crm-commercial-two.vercel.app"
+          curl -fsSL "$base/login" -o /tmp/index.html
+          grep -oE '(src|href)="[^"]+\.(js|css)[^"]*"' /tmp/index.html | sed -E 's/^(src|href)="([^"]+)"/\2/' > /tmp/assets.txt
+          mkdir -p /tmp/assets
+          n=0
+          while IFS= read -r asset; do
+            case "$asset" in
+              http*) url="$asset" ;;
+              /*) url="$base$asset" ;;
+              *) url="$base/$asset" ;;
+            esac
+            n=$((n+1))
+            curl -fsSL "$url" -o "/tmp/assets/asset-$n"
+          done < /tmp/assets.txt
+          echo "PUBLIC_ENDPOINT_HOSTS:"
+          grep -rhoE 'https?://[A-Za-z0-9._:-]+' /tmp/assets /tmp/index.html             | sed -E 's#https?://##'             | sort -u             | grep -E 'supabase|vercel|orvenixa|telegram|resend|google|yandex' || true
+          echo "API_ROUTE_COUNT:"
+          grep -rhoE "/api/[A-Za-z0-9_?&=./:-]+" /tmp/assets | sort -u | wc -l
+          echo "VERIFIED: production shell and referenced JS/CSS assets are reachable"
