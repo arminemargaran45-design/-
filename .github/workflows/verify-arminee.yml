@@ -12,19 +12,34 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Check public HTTPS portfolio
+      - name: Check apex, www, content and assets
         shell: bash
         run: |
           set -euo pipefail
-          for attempt in {1..12}; do
-            code="$(curl -L --connect-timeout 15 --max-time 30 -sS -o /tmp/arminee.html -w '%{http_code}' https://arminee.ru/ || true)"
-            echo "Attempt $attempt: HTTP $code"
-            if [ "$code" = "200" ] && grep -qiE 'Армине|Armine|ORVENIXA|MedAlliance|Recovery360' /tmp/arminee.html; then
-              echo "VERIFIED: https://arminee.ru returns portfolio content over HTTPS"
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "Verification failed"
-          test -f /tmp/arminee.html && head -c 500 /tmp/arminee.html || true
-          exit 1
+
+          check_page() {
+            local url="$1"
+            local file="$2"
+            local code
+            code="$(curl -L --connect-timeout 15 --max-time 30 -sS -o "$file" -w '%{http_code}' "$url")"
+            echo "$url -> HTTP $code"
+            test "$code" = "200"
+            grep -qiE 'Армине|Armine|ORVENIXA|MedAlliance|Recovery360' "$file"
+          }
+
+          check_page "https://arminee.ru/" "/tmp/apex.html"
+          check_page "https://www.arminee.ru/" "/tmp/www.html"
+
+          asset="$(grep -oE '(src|href)="[^"]+\.(css|js)[^"]*"' /tmp/apex.html | head -n1 | sed -E 's/^(src|href)="([^"]+)"/\2/')"
+          if [ -n "$asset" ]; then
+            case "$asset" in
+              http*) asset_url="$asset" ;;
+              /*) asset_url="https://arminee.ru$asset" ;;
+              *) asset_url="https://arminee.ru/$asset" ;;
+            esac
+            asset_code="$(curl -L --connect-timeout 15 --max-time 30 -sS -o /dev/null -w '%{http_code}' "$asset_url")"
+            echo "$asset_url -> HTTP $asset_code"
+            test "$asset_code" = "200"
+          fi
+
+          echo "VERIFIED: apex, www, portfolio content and static asset are available over HTTPS"
