@@ -83,13 +83,13 @@ pg_dump_source() {
 
 echo "[4/6] Создание резервного комплекта без SET ROLE postgres"
 pg_dump_source --schema=public --schema-only --file=/backup/schema-public.sql
-pg_dump_source --schema=public --data-only --disable-triggers --file=/backup/data-public.sql
+pg_dump_source --schema=public --data-only --file=/backup/data-public.sql
 pg_dump_source --table=auth.users --table=auth.identities \
-  --data-only --disable-triggers --file=/backup/data-auth.sql
+  --data-only --file=/backup/data-auth.sql
 pg_dump_source --table=storage.buckets \
-  --data-only --disable-triggers --file=/backup/data-storage-buckets.sql
+  --data-only --file=/backup/data-storage-buckets.sql
 pg_dump_source --table=storage.objects \
-  --data-only --disable-triggers --file=/backup/data-storage-objects-pending.sql
+  --data-only --file=/backup/data-storage-objects-pending.sql
 unset SRC_DB_PASSWORD
 
 # The default public schema may be represented as a comment by pg_dump.
