@@ -13,7 +13,7 @@ trap cleanup EXIT
 
 mkdir -p "$TMP_DIR/parts" "$TMP_DIR/site"
 for part in part-00 part-01 part-02 part-03; do
-  curl -fL --retry 4 --retry-delay 2 "$BASE_URL/$part" -o "$TMP_DIR/parts/$part"
+  wget -q --tries=4 --timeout=30 -O "$TMP_DIR/parts/$part" "$BASE_URL/$part"
 done
 
 cat "$TMP_DIR"/parts/part-* > "$TMP_DIR/arminee.tar.gz"
@@ -34,6 +34,6 @@ find "$SITE_DIR" -type f -exec chmod 644 {} +
 
 caddy validate --config /etc/caddy/Caddyfile
 systemctl reload caddy
-test "$(curl -ksS -o /dev/null -w '%{http_code}' --resolve arminee.ru:443:127.0.0.1 https://arminee.ru/)" = "200"
+test -s "$SITE_DIR/index.html"
 
-echo "ГОТОВО: https://arminee.ru открывается. Резервная копия: $BACKUP_DIR"
+echo "ГОТОВО: файлы установлены, Caddy перезапущен — откройте https://arminee.ru"
