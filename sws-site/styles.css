@@ -370,3 +370,82 @@ body{
 }
 .map-frame{border-color:rgba(187,203,214,.17)}
 .map-frame iframe{filter:none!important}
+
+/* MOBILE V8 HOTFIX — remove dead zones, keep animation, prevent broken atelier visuals */
+@media(max-width:980px){
+  .story{
+    height:88svh!important;
+    min-height:620px!important;
+    overflow:hidden!important;
+    position:relative!important;
+  }
+  .story-sticky{
+    position:relative!important;
+    top:auto!important;
+    height:88svh!important;
+    min-height:620px!important;
+    overflow:hidden!important;
+  }
+  .story-car{
+    inset:7vh 0 8vh!important;
+    background-size:cover!important;
+    background-position:center!important;
+    transform:scale(.96)!important;
+  }
+  .story-label{top:11%!important;left:20px!important}
+  .story-word{font-size:clamp(32px,10.5vw,54px)!important}
+  .story-word.w1{top:17%!important;left:18px!important}
+  .story-word.w2{top:31%!important;right:18px!important}
+  .story-word.w3{bottom:27%!important;left:18px!important}
+  .story-word.w4{bottom:14%!important;right:18px!important}
+
+  .atelier-split{
+    display:flex!important;
+    flex-direction:column!important;
+    min-height:0!important;
+    height:auto!important;
+  }
+  .atelier-media{
+    order:1!important;
+    height:42svh!important;
+    min-height:300px!important;
+    max-height:460px!important;
+    background-image:url('/assets/sws/mercedes-front.jpg')!important;
+    background-size:cover!important;
+    background-position:center!important;
+    clip-path:none!important;
+    opacity:1!important;
+  }
+  .atelier-copy{
+    order:2!important;
+    padding:34px 20px 42px!important;
+  }
+  .atelier-copy h2{margin:10px 0 14px!important}
+  .atelier-copy .hero-actions{margin-top:18px!important}
+
+  #reviews{padding-top:48px!important}
+  #reviews .review-band{margin-top:0!important}
+
+  .work img[src*="steering-wheel"],
+  .service-gallery img[src*="steering-wheel"]{
+    display:none!important;
+  }
+
+  .sticky-call{
+    width:auto!important;
+    max-width:210px!important;
+    left:auto!important;
+    right:14px!important;
+    min-height:42px!important;
+    height:42px!important;
+    padding:0 16px!important;
+    font-size:9px!important;
+    letter-spacing:.12em!important;
+    border-radius:999px!important;
+  }
+}
+@media(max-width:430px){
+  .story,.story-sticky{height:82svh!important;min-height:560px!important}
+  .atelier-media{height:36svh!important;min-height:260px!important}
+  .atelier-copy{padding-top:28px!important}
+}
