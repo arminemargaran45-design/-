@@ -1,0 +1,22 @@
+# Styling Wrap Studio
+# Keep this block separate from ORVENIXA and MedAlliance.
+
+www.stylingwrapstudio.ru {
+  redir https://stylingwrapstudio.ru{uri} permanent
+}
+
+stylingwrapstudio.ru {
+  encode zstd gzip
+
+  root * /var/www/styling-wrap-studio/current
+  file_server
+
+  @static path /styles.css /script.js /assets/* /favicon.ico /robots.txt /sitemap.xml
+  header @static Cache-Control "public, max-age=604800"
+
+  header {
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    X-Frame-Options "SAMEORIGIN"
+  }
+}
