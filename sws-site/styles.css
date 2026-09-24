@@ -828,3 +828,116 @@ body{
   }
   .work-title{font-size:72px}
 }
+
+/* DESKTOP V10 — eliminate black dead zones at desktop zoom, mobile untouched */
+@media(min-width:981px){
+  /* Desktop content must never disappear because an observer/animation did not fire. */
+  .reveal,
+  .clip-reveal{
+    opacity:1!important;
+    visibility:visible!important;
+    transform:none!important;
+    filter:none!important;
+    clip-path:none!important;
+    transition-property:transform,opacity,filter,clip-path;
+  }
+
+  /* The cinematic scene must always contain visible content. */
+  .story{
+    height:150vh!important;
+    min-height:820px!important;
+    position:relative!important;
+    overflow:visible!important;
+    background:#07090b!important;
+  }
+  .story-sticky{
+    position:sticky!important;
+    top:0!important;
+    height:100vh!important;
+    min-height:700px!important;
+    overflow:hidden!important;
+  }
+  .story-car{
+    opacity:1!important;
+    visibility:visible!important;
+    inset:6vh 5vw!important;
+    background-image:url('/assets/sws/mercedes-front.jpg')!important;
+    background-size:cover!important;
+    background-position:center!important;
+  }
+  .story-label{
+    opacity:1!important;
+    visibility:visible!important;
+    z-index:4!important;
+  }
+  .story-word{
+    opacity:.16!important;
+    visibility:visible!important;
+  }
+  .story-word.active{
+    opacity:1!important;
+  }
+
+  /* Safe visual fallback when JS is delayed: first service photo is never blank. */
+  .service-visual img:first-child{
+    opacity:1;
+    transform:scale(1);
+  }
+  .service-visual img.active{
+    opacity:1!important;
+    transform:scale(1)!important;
+  }
+
+  /* No oversized empty section on projects/services. */
+  .works-grid,
+  .service-index,
+  .service-stage{
+    margin-bottom:0!important;
+  }
+}
+
+/* At very wide CSS viewports (4K or browser zoom 25–50%), do not use vh for
+   the pinned sequence: vh becomes thousands of CSS pixels and creates black voids. */
+@media(min-width:2200px){
+  .story{
+    height:1050px!important;
+    min-height:1050px!important;
+    overflow:hidden!important;
+  }
+  .story-sticky{
+    position:relative!important;
+    top:auto!important;
+    height:1050px!important;
+    min-height:1050px!important;
+  }
+  .story-car{
+    inset:70px 7vw!important;
+  }
+  .story-word.w1{top:16%!important}
+  .story-word.w2{top:32%!important}
+  .story-word.w3{bottom:27%!important}
+  .story-word.w4{bottom:13%!important}
+}
+
+/* Strong browser zoom / enormous CSS viewport: keep all major sections compact. */
+@media(min-width:4000px){
+  .story,
+  .story-sticky{
+    height:1200px!important;
+    min-height:1200px!important;
+  }
+  .story-car{
+    inset:80px 9vw!important;
+  }
+  .page-hero{
+    min-height:1500px!important;
+    height:auto!important;
+  }
+  .hero{
+    min-height:1800px!important;
+    height:auto!important;
+  }
+  .final-cta{
+    min-height:1400px!important;
+  }
+}
