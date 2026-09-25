@@ -1,4 +1,4 @@
-name: Inspect old Vercel css refs
+name: Verify restored portfolio
 on:
   push:
     branches: [diagnose-arminee-assets]
@@ -6,10 +6,18 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect old css
+      - name: Verify in clean Chrome
         shell: bash
         run: |
           set -u
-          curl --resolve arminee.ru:443:216.198.79.1 -sSL https://arminee.ru/_next/static/chunks/0fopui53jdou..css -o /tmp/old.css
-          echo "CSS SIZE"; wc -c /tmp/old.css
-          echo "URL REFS"; grep -oE 'url\([^)]+' /tmp/old.css | head -100 || true
+          echo "=== DNS ==="
+          dig +short arminee.ru A || true
+          echo "=== HTTP ==="
+          curl -sSIL https://arminee.ru/ | sed -n '1,40p'
+          echo "=== CHROME ==="
+          BROWSER="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          "$BROWSER" --headless --no-sandbox --disable-gpu --virtual-time-budget=12000 --enable-logging=stderr --v=0 --dump-dom "https://arminee.ru/?restorecheck=1" > /tmp/dom.html 2> /tmp/chrome.log || true
+          echo "DOM_BYTES=$(wc -c < /tmp/dom.html)"
+          grep -oE '<body[^>]*>|Создаю системы|ORVENIXA|MedAlliance|Styling Wrap Studio|Обо мне|Контакты' /tmp/dom.html | head -50 || true
+          echo "=== ERRORS ==="
+          grep -Ei 'uncaught|typeerror|referenceerror|syntaxerror|failed to load|chunkload|hydration|net::ERR|404|stylesheet' /tmp/chrome.log | tail -100 || true
