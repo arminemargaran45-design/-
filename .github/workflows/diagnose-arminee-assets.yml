@@ -1,0 +1,30 @@
+name: Diagnose arminee assets
+on:
+  push:
+    branches: [diagnose-arminee-assets]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe live site
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== ROOT HEADERS ==="
+          curl -sSIL https://arminee.ru/ | sed -n '1,40p'
+          curl -sSL https://arminee.ru/ -o /tmp/index.html
+          echo "=== ASSETS ==="
+          grep -oE '(href|src)="[^"]+\.(css|js)[^"]*"' /tmp/index.html | head -20
+          while read -r asset; do
+            url="$asset"
+            case "$url" in
+              http*) ;;
+              /*) url="https://arminee.ru$url" ;;
+              *) url="https://arminee.ru/$url" ;;
+            esac
+            echo "--- $url"
+            curl -sSIL "$url" | sed -n '1,20p'
+            echo "BODY_PREFIX:"
+            curl -sSL "$url" | head -c 200 | tr '\n' ' '
+            echo
+          done < <(grep -oE '(href|src)="[^"]+\.(css|js)[^"]*"' /tmp/index.html | sed -E 's/^(href|src)="([^"]+)"/\2/' | head -5)
