@@ -1,4 +1,4 @@
-name: Inspect old Vercel build
+name: Inspect old Vercel css refs
 on:
   push:
     branches: [diagnose-arminee-assets]
@@ -6,12 +6,10 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect old origin
+      - name: Inspect old css
         shell: bash
         run: |
           set -u
-          curl --resolve arminee.ru:443:216.198.79.1 -sSL https://arminee.ru/ -o /tmp/old.html
-          echo "SIZE"; wc -c /tmp/old.html
-          echo "TITLE"; grep -oE '<title>[^<]*</title>' /tmp/old.html | head
-          echo "NEXT IMAGE"; grep -oE '/_next/image[^" <]+' /tmp/old.html | head -30 || true
-          echo "ASSETS"; grep -oE '(src|href)="[^"]+"' /tmp/old.html | sed -E 's/^(src|href)="([^"]+)"/\2/' | grep -E '^/' | head -120
+          curl --resolve arminee.ru:443:216.198.79.1 -sSL https://arminee.ru/_next/static/chunks/0fopui53jdou..css -o /tmp/old.css
+          echo "CSS SIZE"; wc -c /tmp/old.css
+          echo "URL REFS"; grep -oE 'url\([^)]+' /tmp/old.css | head -100 || true
