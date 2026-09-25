@@ -1,4 +1,4 @@
-name: Diagnose service worker
+name: Diagnose arminee browser
 on:
   push:
     branches: [diagnose-arminee-assets]
@@ -6,25 +6,22 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Search service worker references
+      - name: Browser diagnostic
         shell: bash
         run: |
           set -u
-          curl -sSL https://arminee.ru/ -o /tmp/index.html
-          echo "HTML:"
-          grep -Eio 'serviceWorker|service-worker|sw\.js|navigator\.serviceWorker' /tmp/index.html | sort -u || true
-          grep -oE '(href|src)="[^"]+\.js[^"]*"' /tmp/index.html | sed -E 's/^(href|src)="([^"]+)"/\2/' | sort -u > /tmp/js.txt || true
-          while read -r asset; do
-            [ -z "$asset" ] && continue
-            case "$asset" in
-              http*) url="$asset" ;;
-              /*) url="https://arminee.ru$asset" ;;
-              *) url="https://arminee.ru/$asset" ;;
-            esac
-            body="/tmp/$(echo "$asset" | tr '/~?&=' '_')"
-            curl -sSL "$url" -o "$body" || true
-            if grep -Eqi 'serviceWorker|service-worker|sw\.js|navigator\.serviceWorker' "$body"; then
-              echo "FOUND IN $url"
-              grep -Eio '.{0,80}(serviceWorker|service-worker|sw\.js|navigator\.serviceWorker).{0,120}' "$body" | head -5 || true
-            fi
-          done < /tmp/js.txt
+          echo "=== DNS ==="
+          dig +short arminee.ru A || true
+          echo "=== CHROME ==="
+          command -v google-chrome || command -v chromium || command -v chromium-browser || true
+          BROWSER="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -n "$BROWSER" ]; then
+            "$BROWSER" --headless --no-sandbox --disable-gpu --virtual-time-budget=10000 --enable-logging=stderr --v=0 --dump-dom "https://arminee.ru/?diag=1" > /tmp/dom.html 2> /tmp/chrome.log || true
+            echo "=== DOM SIZE / TEXT ==="
+            wc -c /tmp/dom.html || true
+            grep -oE '<body[^>]*>|Создаю системы|ORVENIXA|MedAlliance|Styling Wrap Studio' /tmp/dom.html | head -30 || true
+            echo "=== CONSOLE / ERRORS ==="
+            grep -Ei 'error|uncaught|failed|exception|chunk|hydration|syntax|reference|typeerror' /tmp/chrome.log | tail -120 || true
+            echo "=== CHROME LOG TAIL ==="
+            tail -120 /tmp/chrome.log || true
+          fi
