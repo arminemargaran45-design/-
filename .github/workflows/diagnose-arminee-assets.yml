@@ -1,4 +1,4 @@
-name: Browser render arminee
+name: Diagnose service worker
 on:
   push:
     branches: [diagnose-arminee-assets]
@@ -6,23 +6,25 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Render in fresh Chrome
+      - name: Search service worker references
         shell: bash
         run: |
           set -u
-          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          echo "CHROME=$CHROME"
-          "$CHROME" --version || true
-          echo "=== HEADLESS DOM ==="
-          timeout 30 "$CHROME" --headless --no-sandbox --disable-gpu --virtual-time-budget=12000 --dump-dom "https://arminee.ru/?fresh=browserdiag-$(date +%s)" > /tmp/dom.html 2>/tmp/chrome.err || true
-          echo "DOM_BYTES=$(wc -c </tmp/dom.html)"
-          echo "BODY_TEXT_MARKERS:"
-          grep -oE 'Создаю системы|ORVENIXA|MedAlliance|Recovery360|Styling Wrap Studio|Product creator' /tmp/dom.html | sort -u || true
-          echo "STYLE_LINKS:"
-          grep -oE 'href="[^"]+\.css[^"]*"' /tmp/dom.html | head -10 || true
-          echo "CHROME_ERRORS:"
-          tail -80 /tmp/chrome.err || true
-          echo "=== SCREENSHOT ==="
-          timeout 30 "$CHROME" --headless --no-sandbox --disable-gpu --window-size=1440,1000 --virtual-time-budget=12000 --screenshot=/tmp/arminee.png "https://arminee.ru/?fresh=screenshot-$(date +%s)" 2>>/tmp/chrome.err || true
-          file /tmp/arminee.png || true
-          ls -lh /tmp/arminee.png || true
+          curl -sSL https://arminee.ru/ -o /tmp/index.html
+          echo "HTML:"
+          grep -Eio 'serviceWorker|service-worker|sw\.js|navigator\.serviceWorker' /tmp/index.html | sort -u || true
+          grep -oE '(href|src)="[^"]+\.js[^"]*"' /tmp/index.html | sed -E 's/^(href|src)="([^"]+)"/\2/' | sort -u > /tmp/js.txt || true
+          while read -r asset; do
+            [ -z "$asset" ] && continue
+            case "$asset" in
+              http*) url="$asset" ;;
+              /*) url="https://arminee.ru$asset" ;;
+              *) url="https://arminee.ru/$asset" ;;
+            esac
+            body="/tmp/$(echo "$asset" | tr '/~?&=' '_')"
+            curl -sSL "$url" -o "$body" || true
+            if grep -Eqi 'serviceWorker|service-worker|sw\.js|navigator\.serviceWorker' "$body"; then
+              echo "FOUND IN $url"
+              grep -Eio '.{0,80}(serviceWorker|service-worker|sw\.js|navigator\.serviceWorker).{0,120}' "$body" | head -5 || true
+            fi
+          done < /tmp/js.txt
