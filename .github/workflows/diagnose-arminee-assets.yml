@@ -1,4 +1,4 @@
-name: Diagnose Timeweb portfolio
+name: Diagnose arminee public after DNS switch
 on:
   push:
     branches: [diagnose-arminee-assets]
@@ -6,17 +6,19 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Probe Timeweb directly
+      - name: Probe public DNS and assets
         shell: bash
         run: |
           set -u
-          echo "=== TIMEWEB ROOT ==="
-          curl -k -sSIL --resolve arminee.ru:443:200.169.183.154 https://arminee.ru/ | sed -n '1,40p'
-          curl -k -sSL --resolve arminee.ru:443:200.169.183.154 https://arminee.ru/ -o /tmp/timeweb.html
-          echo "=== TITLE / ASSETS ==="
-          grep -oE '<title>[^<]*</title>|(href|src)="[^"]+\.(css|js)[^"]*"' /tmp/timeweb.html | head -30 || true
-          echo "=== CHECK FIRST ASSETS ==="
-          grep -oE '(href|src)="[^"]+\.(css|js)[^"]*"' /tmp/timeweb.html | sed -E 's/^(href|src)="([^"]+)"/\2/' | head -8 > /tmp/assets.txt || true
+          echo "=== DNS ==="
+          dig +short arminee.ru A || true
+          dig +short www.arminee.ru A || true
+          echo "=== ROOT ==="
+          curl -sSIL https://arminee.ru/ | sed -n '1,40p'
+          curl -sSL https://arminee.ru/ -o /tmp/index.html
+          echo "=== ASSETS ==="
+          grep -oE '(href|src)="[^"]+\.(css|js)[^"]*"' /tmp/index.html | head -20 || true
+          grep -oE '(href|src)="[^"]+\.(css|js)[^"]*"' /tmp/index.html | sed -E 's/^(href|src)="([^"]+)"/\2/' | head -8 > /tmp/assets.txt || true
           while read -r asset; do
             [ -z "$asset" ] && continue
             case "$asset" in
@@ -25,5 +27,5 @@ jobs:
               *) url="https://arminee.ru/$asset" ;;
             esac
             echo "--- $url"
-            curl -k -sSIL --resolve arminee.ru:443:200.169.183.154 "$url" | grep -Ei 'HTTP/|content-type|content-length|server:' | head -10
+            curl -sSIL "$url" | grep -Ei 'HTTP/|content-type|content-length|server:|cache-control' | head -12
           done < /tmp/assets.txt
