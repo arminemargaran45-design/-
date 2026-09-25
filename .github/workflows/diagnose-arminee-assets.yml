@@ -1,4 +1,4 @@
-name: Diagnose arminee public after DNS switch
+name: Browser render arminee
 on:
   push:
     branches: [diagnose-arminee-assets]
@@ -6,26 +6,23 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Probe public DNS and assets
+      - name: Render in fresh Chrome
         shell: bash
         run: |
           set -u
-          echo "=== DNS ==="
-          dig +short arminee.ru A || true
-          dig +short www.arminee.ru A || true
-          echo "=== ROOT ==="
-          curl -sSIL https://arminee.ru/ | sed -n '1,40p'
-          curl -sSL https://arminee.ru/ -o /tmp/index.html
-          echo "=== ASSETS ==="
-          grep -oE '(href|src)="[^"]+\.(css|js)[^"]*"' /tmp/index.html | head -20 || true
-          grep -oE '(href|src)="[^"]+\.(css|js)[^"]*"' /tmp/index.html | sed -E 's/^(href|src)="([^"]+)"/\2/' | head -8 > /tmp/assets.txt || true
-          while read -r asset; do
-            [ -z "$asset" ] && continue
-            case "$asset" in
-              http*) url="$asset" ;;
-              /*) url="https://arminee.ru$asset" ;;
-              *) url="https://arminee.ru/$asset" ;;
-            esac
-            echo "--- $url"
-            curl -sSIL "$url" | grep -Ei 'HTTP/|content-type|content-length|server:|cache-control' | head -12
-          done < /tmp/assets.txt
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          echo "CHROME=$CHROME"
+          "$CHROME" --version || true
+          echo "=== HEADLESS DOM ==="
+          timeout 30 "$CHROME" --headless --no-sandbox --disable-gpu --virtual-time-budget=12000 --dump-dom "https://arminee.ru/?fresh=browserdiag-$(date +%s)" > /tmp/dom.html 2>/tmp/chrome.err || true
+          echo "DOM_BYTES=$(wc -c </tmp/dom.html)"
+          echo "BODY_TEXT_MARKERS:"
+          grep -oE 'Создаю системы|ORVENIXA|MedAlliance|Recovery360|Styling Wrap Studio|Product creator' /tmp/dom.html | sort -u || true
+          echo "STYLE_LINKS:"
+          grep -oE 'href="[^"]+\.css[^"]*"' /tmp/dom.html | head -10 || true
+          echo "CHROME_ERRORS:"
+          tail -80 /tmp/chrome.err || true
+          echo "=== SCREENSHOT ==="
+          timeout 30 "$CHROME" --headless --no-sandbox --disable-gpu --window-size=1440,1000 --virtual-time-budget=12000 --screenshot=/tmp/arminee.png "https://arminee.ru/?fresh=screenshot-$(date +%s)" 2>>/tmp/chrome.err || true
+          file /tmp/arminee.png || true
+          ls -lh /tmp/arminee.png || true
