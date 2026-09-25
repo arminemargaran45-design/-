@@ -1,4 +1,4 @@
-name: Diagnose arminee browser
+name: Inspect old Vercel build
 on:
   push:
     branches: [diagnose-arminee-assets]
@@ -6,22 +6,12 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Browser diagnostic
+      - name: Inspect old origin
         shell: bash
         run: |
           set -u
-          echo "=== DNS ==="
-          dig +short arminee.ru A || true
-          echo "=== CHROME ==="
-          command -v google-chrome || command -v chromium || command -v chromium-browser || true
-          BROWSER="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          if [ -n "$BROWSER" ]; then
-            "$BROWSER" --headless --no-sandbox --disable-gpu --virtual-time-budget=10000 --enable-logging=stderr --v=0 --dump-dom "https://arminee.ru/?diag=1" > /tmp/dom.html 2> /tmp/chrome.log || true
-            echo "=== DOM SIZE / TEXT ==="
-            wc -c /tmp/dom.html || true
-            grep -oE '<body[^>]*>|Создаю системы|ORVENIXA|MedAlliance|Styling Wrap Studio' /tmp/dom.html | head -30 || true
-            echo "=== CONSOLE / ERRORS ==="
-            grep -Ei 'error|uncaught|failed|exception|chunk|hydration|syntax|reference|typeerror' /tmp/chrome.log | tail -120 || true
-            echo "=== CHROME LOG TAIL ==="
-            tail -120 /tmp/chrome.log || true
-          fi
+          curl --resolve arminee.ru:443:216.198.79.1 -sSL https://arminee.ru/ -o /tmp/old.html
+          echo "SIZE"; wc -c /tmp/old.html
+          echo "TITLE"; grep -oE '<title>[^<]*</title>' /tmp/old.html | head
+          echo "NEXT IMAGE"; grep -oE '/_next/image[^" <]+' /tmp/old.html | head -30 || true
+          echo "ASSETS"; grep -oE '(src|href)="[^"]+"' /tmp/old.html | sed -E 's/^(src|href)="([^"]+)"/\2/' | grep -E '^/' | head -120
