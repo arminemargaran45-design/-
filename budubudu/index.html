@@ -1,12 +1,5 @@
-<!doctype html>
-<html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#f7f3e8" />
-    <meta name="description" content="БудуБуду — детская игра о профессиях и строительстве собственного города" />
-    <title>БудуБуду — MVP</title>
-    <style>
+<!doctype html><html lang="ru"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/><meta name="theme-color" content="#f7f3e8"/><meta name="description" content="БудуБуду — игра, в которой ребенок создает персонажа, изучает профессии и строит свой город"/>
+<title>БудуБуду — игра с мальчиком и девочкой</title><style>
 :root {
   --ink: #24314a;
   --muted: #667187;
@@ -258,22 +251,41 @@ input:focus, select:focus { border-color: var(--blue-dark); }
 .arcade-safe{font-size:12px;color:#708097;line-height:1.4;}
 @media(max-width:760px){.arcade-layout{grid-template-columns:1fr;}.arcade-playground{min-height:265px;}.arcade-large{font-size:105px;margin-top:-30px;}.arcade-character{height:155px;width:100px;bottom:0;}.arcade-task-panel{padding:16px;}}
 @media(max-width:420px){.arcade-section-head{display:block;}.arcade-section-head .btn{margin-top:8px;}.arcade-item{min-height:96px;}.arcade-item-icon{font-size:32px;}.arcade-item strong{font-size:10px;}}
-
-</style>
-  </head>
-  <body>
-    <div id="app" aria-live="polite"></div>
-    <script>
-// БудуБуду • редактор персонажа. SVG генерируется локально, фотографии не требуются.
-const AVATAR_KEY = 'budubudu-character-v2';
+/* v3: two selectable base models and a child-friendly wardrobe */
+.avatar-editor-shell{width:min(1250px,calc(100% - 26px));}
+.avatar-studio{grid-template-columns:minmax(310px,.90fr) minmax(390px,1.1fr);gap:23px;}
+.avatar-preview-area{background:linear-gradient(160deg,#e4efff,#fff0e8 72%,#ecf6e9);border:2px solid #fff;padding:14px;}
+.base-characters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px;}
+.base-character-card{border:2px solid #dce6f0;background:rgba(255,255,255,.75);border-radius:20px;height:116px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;padding:5px;transition:transform .15s,border-color .15s,background .15s;}
+.base-character-card.selected{border-color:#EDAB52;background:#fff4dc;box-shadow:0 4px 13px #d69b5330;}
+.base-character-card:active{transform:scale(.97)}
+.base-character-card .base-character-mini{width:72px;height:108px;min-width:65px;filter:drop-shadow(0 4px 4px #384e6b22);}
+.base-character-card strong{font-weight:900;font-size:14px;color:#3a4c61;}
+.avatar-stage{height:385px;background:radial-gradient(circle at 50% 45%,#fffefd 0%,#fcf8ef 40%,#ebf2fc 70%,#e1edf5 100%);border:1px solid #ffffffd5;}
+.avatar-stage:before{border:0;background:linear-gradient(0deg,#b7dcbe55 0%,transparent 30%);border-radius:30px;inset:15px;}
+.avatar-stage .character-svg{max-width:300px;filter:drop-shadow(0 8px 9px #46616d25);}
+.avatar-controls{padding:20px;}
+.avatar-tabs{grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;}
+.avatar-tab{min-height:70px;}
+.avatar-detail:hover,.avatar-tab:hover,.base-character-card:hover{border-color:#e9b875;}
+.avatar-choices{min-height:246px;}
+.city-character,.arcade-character-svg{transition:transform .2s;}
+.city-character-button:hover .city-character{transform:translateY(-4px)}
+@media(max-width:850px){.avatar-studio{grid-template-columns:minmax(0,1fr);}.avatar-preview-area{position:static;display:block;}.avatar-stage{height:330px;}.base-characters{max-width:530px;margin:0 auto 9px}.avatar-tabs{grid-template-columns:repeat(6,minmax(0,1fr));}}
+@media(max-width:500px){.avatar-headline h1{font-size:36px;}.base-character-card{height:89px;}.base-character-card .base-character-mini{height:83px;width:60px;min-width:51px;}.base-character-card strong{font-size:12px;}.avatar-stage{height:282px;}.avatar-tabs{grid-template-columns:repeat(4,minmax(0,1fr));}.avatar-controls{padding:11px;}.avatar-stage .character-svg{max-width:280px;}}
+</style></head><body><div id="app" aria-live="polite"></div>
+<script>
+// БудуБуду — modular, offline-first avatar editor. Characters are original layered SVG art.
 const SKINS = ['#FFE2C5','#F8C99E','#E6AE80','#BD805F','#976145','#694334'];
 const EYES = ['#4A3029','#74513A','#497B9B','#4E8A65','#7C69AC','#B6A28A'];
 const HAIRS = ['#332621','#5B352B','#8B5030','#BB753B','#E8B46E','#F0D87F','#1F2736','#AC5046','#9163AA'];
-const CLOTHES = ['#6E9CCF','#E58C76','#89B79B','#B28DD2','#F0BB53','#42666C','#D7829D'];
+const CLOTHES = ['#6E9CCF','#E58C76','#89B79B','#B28DD2','#F0BB53','#42666C','#D7829D','#FFFAF3'];
+const BOTTOM_COLORS = ['#7199B9','#EAA0A8','#B7A1CD','#85836A','#3C567B','#DFBB8B'];
+const SHOE_COLORS = ['#E9819E','#53916B','#7D94D8','#ECB752','#A58AB5','#E4E8EA'];
 const CHARACTER_CATEGORIES = [
  ['skin','🎨','Кожа'],['face','🙂','Лицо'],['eyes','👀','Глаза'],['nose','👃','Нос'],
- ['mouth','😊','Рот'],['brows','〰️','Брови'],['hair','💇','Волосы'],['outfit','👕','Одежда'],
- ['shoes','👟','Обувь'],['accessory','🎀','Аксессуары']
+ ['mouth','😊','Рот'],['brows','〰️','Брови'],['hair','💇','Волосы'],['outfit','👕','Верх'],
+ ['bottom','🩳','Низ'],['shoes','👟','Обувь'],['accessory','🎀','Аксессуары']
 ];
 const CUSTOM_OPTIONS = {
  face:[['oval','Овал'],['round','Круглое'],['soft','Сердечко']],
@@ -281,154 +293,191 @@ const CUSTOM_OPTIONS = {
  nose:[['button','Пуговка'],['soft','Аккуратный'],['tiny','Маленький']],
  mouth:[['smile','Улыбка'],['grin','Широкая'],['gentle','Нежная'],['wow','Удивление']],
  brows:[['soft','Мягкие'],['arched','Дугообразные'],['straight','Прямые']],
- hair:[['short','Короткая'],['bob','Каре'],['long','Длинная'],['curly','Кудри'],['spiky','Озорная'],['ponytail','Хвост']],
+ hair:[['tousled','Непослушные'],['waves','Волны'],['short','Короткие'],['bob','Каре'],['long','Длинные'],['curly','Кудри'],['spiky','Озорная'],['ponytail','Хвост']],
  outfit:[['casual','Футболка'],['hoodie','Худи'],['overalls','Комбинезон'],['sport','Спортивный'],['dress','Платье'],['doctor','Халат врача'],['firefighter','Пожарный'],['builder','Строитель']],
+ bottom:[['shorts','Шорты'],['jeans','Джинсы'],['cargo','Карго'],['skirt','Юбка']],
  shoes:[['sneakers','Кроссовки'],['boots','Ботинки'],['slipons','Туфли'],['sandals','Сандалии']],
  accessory:[['none','Без аксессуара'],['glasses','Очки'],['cap','Кепка'],['bow','Бантик'],['backpack','Рюкзак'],['freckles','Веснушки'],['band','Ободок']]
 };
 const REQUIRED_PROFESSION = {doctor:'doctor',firefighter:'firefighter',builder:'builder'};
-const DEFAULT_CHARACTER = {
- gender:'girl',skin:1,face:'oval',eyes:'wide',eyeColor:0,nose:'button',mouth:'smile',brows:'soft',
- hair:'bob',hairColor:1,outfit:'casual',outfitColor:0,shoes:'sneakers',accessory:'none'
+const GIRL_BASE = {
+ gender:'girl',skin:1,face:'soft',eyes:'wide',eyeColor:0,nose:'button',mouth:'smile',brows:'soft',
+ hair:'waves',hairColor:2,outfit:'casual',outfitColor:7,bottom:'shorts',bottomColor:0,
+ shoes:'sneakers',shoeColor:0,accessory:'freckles'
 };
+const BOY_BASE = {
+ gender:'boy',skin:1,face:'round',eyes:'wide',eyeColor:0,nose:'button',mouth:'smile',brows:'soft',
+ hair:'tousled',hairColor:1,outfit:'casual',outfitColor:7,bottom:'cargo',bottomColor:3,
+ shoes:'sneakers',shoeColor:1,accessory:'none'
+};
+const DEFAULT_CHARACTER = GIRL_BASE;
 let characterDraft = null;
 let characterCategory = 'skin';
+let avatarRenderCount = 0;
 function normalizeCharacter(source) {
  const src = source && typeof source==='object' ? source : {};
- const c = {...DEFAULT_CHARACTER};
- for(const key of Object.keys(c)) if(src[key] !== undefined) c[key] = src[key];
- for(const [field,opts] of Object.entries(CUSTOM_OPTIONS)) if(!opts.some(([id])=>id===c[field])) c[field]=DEFAULT_CHARACTER[field];
- for(const [field,list] of [['skin',SKINS],['eyeColor',EYES],['hairColor',HAIRS],['outfitColor',CLOTHES]])
-   c[field] = Number.isInteger(+c[field]) ? Math.max(0,Math.min(list.length-1,+c[field])) : 0;
+ const base = src.gender==='boy' ? BOY_BASE : GIRL_BASE;
+ const c = {...base};
+ for(const key of Object.keys(base)) if(src[key] !== undefined) c[key] = src[key];
+ for(const [field,opts] of Object.entries(CUSTOM_OPTIONS)) if(!opts.some(([id])=>id===c[field])) c[field]=base[field];
+ for(const [field,list] of [['skin',SKINS],['eyeColor',EYES],['hairColor',HAIRS],['outfitColor',CLOTHES],['bottomColor',BOTTOM_COLORS],['shoeColor',SHOE_COLORS]])
+   c[field] = Number.isInteger(+c[field]) ? Math.max(0,Math.min(list.length-1,+c[field])) : base[field];
  if(!['girl','boy'].includes(c.gender)) c.gender='girl';
  return c;
 }
 function characterUnlocked(outfit) {
  const profession=REQUIRED_PROFESSION[outfit];
- return !profession || (state.professionProgress?.[profession]||0)>0;
+ return !profession || (typeof state!=='undefined' && (state.professionProgress?.[profession]||0)>0);
 }
 function avatarSVG(raw, extraClass='') {
- const c=normalizeCharacter(raw), skin=SKINS[c.skin], eye=EYES[c.eyeColor], hair=HAIRS[c.hairColor], cloth=CLOTHES[c.outfitColor];
- const facePaths = {
- oval:'M103 118 C101 75 121 55 160 55 C199 55 219 75 217 118 C215 160 198 189 160 192 C122 189 105 160 103 118Z',
- round:'M100 116 C100 75 120 57 160 57 C200 57 220 75 220 116 C220 157 198 186 160 186 C122 186 100 157 100 116Z',
- soft:'M106 112 C102 74 125 56 160 56 C195 56 218 74 214 112 C211 151 187 190 160 195 C133 190 109 151 106 112Z'
- };
- const backHair = {
- short:'<path d="M99 111Q93 60 124 51Q155 27 190 50Q226 60 222 110L210 104Q201 72 174 67Q134 63 113 96Z"/>',
- bob:'<path d="M97 100Q99 43 160 42Q221 43 223 100L231 204Q211 223 193 202L188 106L132 104L128 201Q107 226 90 200Z"/>',
- long:'<path d="M96 94Q96 41 160 39Q226 42 224 94L237 305Q201 315 190 279L195 102L124 102L133 281Q112 317 81 303Z"/>',
- curly:'<g><circle cx="112" cy="70" r="26"/><circle cx="140" cy="48" r="26"/><circle cx="178" cy="47" r="28"/><circle cx="209" cy="72" r="27"/><circle cx="94" cy="103" r="21"/><circle cx="224" cy="108" r="21"/><circle cx="98" cy="156" r="23"/><circle cx="220" cy="159" r="24"/></g>',
- spiky:'<path d="M97 103L84 72L108 76L110 43L131 55L155 26L166 50L200 33L202 59L231 57L217 90L222 117L200 83L121 85Z"/>',
- ponytail:'<path d="M100 102Q101 42 161 41Q224 42 222 103L213 124L202 79L123 81L110 126Z"/><path d="M214 71Q254 72 260 123Q268 161 238 187Q247 139 216 117Z"/>'
- };
- const frontHair = {
- short:'<path d="M102 104Q106 55 141 57Q164 78 198 59Q216 72 216 104L202 88L185 90Q160 107 134 88L115 108Z"/>',
- bob:'<path d="M104 107Q103 58 143 50Q182 42 211 75L213 105Q195 105 176 82Q148 112 103 107Z"/>',
- long:'<path d="M102 112Q103 49 158 45Q216 45 217 109L207 115Q199 94 197 81Q164 110 126 92L115 123Z"/>',
- curly:'<g><circle cx="118" cy="73" r="24"/><circle cx="149" cy="68" r="25"/><circle cx="182" cy="68" r="25"/><circle cx="205" cy="88" r="20"/></g>',
- spiky:'<path d="M106 101L99 68L122 77L143 51L159 73L185 49L195 78L217 75L211 107Q183 92 158 104Q125 94 106 101Z"/>',
- ponytail:'<path d="M104 109Q102 59 148 50Q179 45 213 69Q194 91 167 81Q144 105 104 109Z"/>'
- };
- const eyes = c.eyes==='wide'
-  ? `<ellipse cx="136" cy="125" rx="14" ry="16" fill="#fff"/><ellipse cx="184" cy="125" rx="14" ry="16" fill="#fff"/><circle cx="137" cy="127" r="9" fill="${eye}"/><circle cx="183" cy="127" r="9" fill="${eye}"/><circle cx="139" cy="123" r="3.4" fill="#fff"/><circle cx="185" cy="123" r="3.4" fill="#fff"/>`
-  : c.eyes==='smile'
-  ? `<path d="M125 129Q136 118 147 130M173 130Q184 118 195 129" stroke="${eye}" stroke-width="5" fill="none" stroke-linecap="round"/>`
-  : c.eyes==='almond'
-  ? `<path d="M124 128Q137 113 150 128Q137 140 124 128ZM170 128Q183 113 196 128Q183 140 170 128Z" fill="#fff"/><circle cx="137" cy="127" r="7.5" fill="${eye}"/><circle cx="183" cy="127" r="7.5" fill="${eye}"/><circle cx="139" cy="124" r="2.6" fill="white"/><circle cx="185" cy="124" r="2.6" fill="white"/>`
-  : `<ellipse cx="137" cy="126" rx="9" ry="12" fill="${eye}"/><ellipse cx="183" cy="126" rx="9" ry="12" fill="${eye}"/><circle cx="139" cy="122" r="2.8" fill="white"/><circle cx="185" cy="122" r="2.8" fill="white"/>`;
- const brow = c.brows==='straight' ? 'M126 107L148 107M172 107L194 107' : c.brows==='arched' ? 'M125 109Q137 92 149 106M171 106Q183 92 195 109' : 'M126 108Q136 102 148 108M172 108Q184 102 194 108';
- const nose = c.nose==='button' ? '<path d="M156 143Q160 150 166 144" fill="none" stroke="#B87766" stroke-width="3" stroke-linecap="round"/>' : c.nose==='soft' ? '<path d="M160 136L157 147Q161 150 165 147" fill="none" stroke="#B87766" stroke-width="2.8" stroke-linejoin="round"/>' : '<circle cx="160" cy="145" r="2.7" fill="#B87766"/>';
- const mouth={smile:'<path d="M145 157Q160 172 175 157" fill="none" stroke="#A85055" stroke-width="4" stroke-linecap="round"/>',grin:'<path d="M142 157Q160 181 178 157Q161 163 142 157Z" fill="#8C454E"/><path d="M146 160Q160 169 174 160" stroke="white" stroke-width="4" fill="none"/>',gentle:'<path d="M151 161Q160 167 169 161" fill="none" stroke="#A85055" stroke-width="3.2" stroke-linecap="round"/>',wow:'<ellipse cx="160" cy="164" rx="8" ry="10" fill="#9D4A56"/>'}[c.mouth];
- const shoes = {
- sneakers:`<path d="M121 443Q109 448 107 466Q110 477 141 474L155 470L151 452L140 442Z" fill="#ffffff" stroke="#718DA7" stroke-width="3"/><path d="M179 443Q191 448 193 466Q190 477 159 474L155 470L159 452L171 442Z" fill="#ffffff" stroke="#718DA7" stroke-width="3"/><path d="M110 463L151 463M169 463L190 463" stroke="#6B99C4" stroke-width="4" stroke-linecap="round"/>`,
- boots:`<path d="M120 427L146 428L153 467Q136 481 104 472L106 456Z" fill="#9A6B4F"/><path d="M174 427L200 428L201 456L216 472Q184 481 167 467Z" fill="#9A6B4F"/><path d="M106 469L153 469M167 469L215 469" stroke="#5D453B" stroke-width="6"/>`,
- slipons:`<path d="M116 449Q119 440 144 447L154 470Q129 480 107 471Z" fill="#D67887"/><path d="M176 449Q201 440 204 450L213 471Q192 480 166 470Z" fill="#D67887"/>`,
- sandals:`<path d="M109 468Q130 476 152 468M168 468Q190 476 211 468" stroke="#865C46" stroke-width="8" stroke-linecap="round"/><path d="M111 459L148 454M172 454L210 459" stroke="#E7B45E" stroke-width="9" stroke-linecap="round"/>`
+ const c=normalizeCharacter(raw), skin=SKINS[c.skin], eye=EYES[c.eyeColor], hair=HAIRS[c.hairColor];
+ const cloth=CLOTHES[c.outfitColor], bottoms=BOTTOM_COLORS[c.bottomColor], shoe=SHOE_COLORS[c.shoeColor];
+ const uid='bb'+(++avatarRenderCount); const gid=(x)=>uid+'-'+x;
+ const mix=(hex,target,weight)=>'#'+[1,3,5].map(i=>Math.round(parseInt(hex.slice(i,i+2),16)*(1-weight)+target*weight).toString(16).padStart(2,'0')).join('');
+ const girl = c.gender==='girl';
+ const face={
+  oval:'M105 119 C103 77 119 56 160 54 C201 56 217 77 215 119 C215 166 190 193 160 194 C130 193 105 166 105 119Z',
+  round:'M100 117 C100 74 119 58 160 57 C201 58 220 74 220 117 C220 158 195 188 160 189 C125 188 100 158 100 117Z',
+  soft:'M104 119 C101 75 119 56 160 54 C201 56 219 75 216 119 C213 156 184 195 160 197 C136 195 107 156 104 119Z'
+ }[c.face];
+ const backHair={
+  tousled:'<path d="M98 112Q93 72 120 55Q155 24 191 48Q226 54 225 117L213 121L197 73L130 76L112 123Z"/>',
+  waves:'<path d="M101 96Q97 48 147 41Q206 29 222 84Q229 105 227 145Q229 197 245 266Q238 300 220 300Q207 290 206 270Q210 321 183 327Q169 315 174 278L193 94L126 91L125 275Q128 326 101 323Q82 313 91 277Q72 308 68 276Q87 219 91 166Q88 114 101 96Z"/>',
+  short:'<path d="M99 109Q94 57 132 49Q172 31 199 54Q224 70 221 114L206 96L114 104Z"/>',
+  bob:'<path d="M98 109Q97 47 159 42Q222 43 223 109L228 206Q207 223 191 210L191 104L128 103L128 211Q110 222 92 206Z"/>',
+  long:'<path d="M100 99Q95 43 160 40Q225 44 222 100L233 308Q208 328 191 295L193 94L127 94L129 295Q109 325 84 308Z"/>',
+  curly:'<g><circle cx="112" cy="69" r="25"/><circle cx="143" cy="47" r="27"/><circle cx="180" cy="47" r="28"/><circle cx="208" cy="73" r="26"/><circle cx="96" cy="105" r="22"/><circle cx="226" cy="109" r="22"/><circle cx="96" cy="157" r="22"/><circle cx="225" cy="160" r="22"/></g>',
+  spiky:'<path d="M98 108L83 73L108 78L110 43L133 55L156 29L169 51L198 35L202 62L232 57L217 91L220 117L201 86L123 87Z"/>',
+  ponytail:'<path d="M100 101Q99 43 160 41Q223 43 220 105L208 113L193 77L128 81L111 120Z"/><path d="M208 72Q255 67 258 133Q266 178 237 189Q247 133 206 111Z"/>'
+ }[c.hair];
+ const frontHair={
+  tousled:'<path d="M103 113Q92 79 106 66Q132 49 148 52Q164 28 181 48Q209 46 219 83L217 117Q202 99 193 80Q169 105 155 91Q135 114 113 100Z"/><path d="M121 64Q110 37 139 42Q150 49 144 65M165 49Q177 24 192 38Q198 51 182 61" fill="none" stroke="url(#HAIRLIGHT)" stroke-width="8" stroke-linecap="round"/>',
+  waves:'<path d="M100 110Q95 59 127 49Q157 29 193 44Q219 56 220 107Q208 102 205 87Q188 87 181 75Q150 106 128 92Q122 108 100 110Z"/><path d="M122 82Q110 115 111 155M211 110Q208 134 212 158" fill="none" stroke="url(#HAIRLIGHT)" stroke-width="9" stroke-linecap="round"/>',
+  short:'<path d="M104 103Q99 58 143 54Q168 72 193 56Q215 65 217 101Q194 98 182 84Q153 106 130 87L113 107Z"/>',
+  bob:'<path d="M102 107Q100 57 143 50Q181 41 213 79L214 111Q198 106 177 83Q148 112 102 107Z"/>',
+  long:'<path d="M103 111Q102 46 160 46Q211 42 219 111Q206 112 196 82Q159 113 131 93L115 121Z"/>',
+  curly:'<g><circle cx="118" cy="72" r="24"/><circle cx="148" cy="67" r="25"/><circle cx="182" cy="66" r="24"/><circle cx="205" cy="87" r="19"/></g>',
+  spiky:'<path d="M106 102L100 67L124 78L143 53L159 73L188 49L195 80L219 75L212 106Q182 92 158 104Q124 94 106 102Z"/>',
+  ponytail:'<path d="M105 108Q100 59 146 51Q178 42 214 69Q193 89 168 82Q142 105 105 108Z"/>'
+ }[c.hair];
+ // Legs are separate from trousers: shorts and skirts always leave the knees visible.
+ const legs=`<path d="M124 334Q136 328 150 336L150 448Q146 456 128 453L122 364Z" fill="url(#SKIN)"/><path d="M171 336Q187 330 198 334L199 453Q182 457 170 448Z" fill="url(#SKIN)"/>`;
+ let pants='';
+ if(c.outfit!=='dress') {
+   if(c.bottom==='jeans') pants=`<path d="M115 332H205L198 444L170 444L161 366L151 444L120 444Z" fill="url(#PANTS)" stroke="#46647D" stroke-opacity=".22" stroke-width="2"/><path d="M160 332L160 359M133 370L132 430M187 370L187 430" fill="none" stroke="#fff" stroke-opacity=".36" stroke-width="2"/>`;
+   else if(c.bottom==='skirt') pants=`<path d="M115 331L104 389Q160 413 216 389L205 331Z" fill="url(#PANTS)" stroke="#54637F" stroke-opacity=".18" stroke-width="2"/><path d="M124 342Q159 349 197 342M133 366L126 390M183 366L192 392" stroke="#fff" stroke-opacity=".5" stroke-width="2.5" fill="none"/>`;
+   else pants=`<path d="M116 330H204L203 377Q187 386 167 377L162 357L153 377Q132 386 116 377Z" fill="url(#PANTS)" stroke="#3D607A" stroke-opacity=".24" stroke-width="2"/><path d="M160 331L162 357M124 370Q136 377 149 370M173 370Q186 376 197 370" stroke="#fff" stroke-opacity=".4" stroke-width="2" fill="none"/>${c.bottom==='cargo'?'<path d="M114 351L133 351L133 371L113 371Z M186 351H206V371H186Z" fill="url(#PANTS)" stroke="#273E57" stroke-opacity=".45" stroke-width="2"/><path d="M114 357L133 357M186 357H205" stroke="#fff" stroke-opacity=".4" stroke-width="2"/>':''}`;
+ }
+ const sole=`<path d="M105 469Q132 475 153 467M167 467Q187 475 215 469" stroke="#F8FCFF" stroke-width="6" stroke-linecap="round"/>`;
+ const shoes={
+ sneakers:`<path d="M126 443L148 444L154 463Q154 473 134 475L103 472Q100 459 112 451Z M174 443L192 443Q206 449 216 461Q220 471 211 473L171 474L166 461Z" fill="url(#SHOE)" stroke="#607282" stroke-opacity=".55" stroke-width="2.4"/><path d="M112 461L149 461M170 461L207 461" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M123 450L139 455M176 455L192 450" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>${sole}`,
+ boots:`<path d="M123 420H150L154 466Q151 478 108 474L107 457L120 445Z M171 420H197L199 445L214 457L215 474Q174 478 167 466Z" fill="#966A55" stroke="#634737" stroke-width="2.5"/><path d="M109 469L154 469M167 469L215 469" stroke="#F7EEE5" stroke-width="6"/>`,
+ slipons:`<path d="M119 449Q138 442 147 451L154 469Q130 478 106 471Q108 452 119 449Z M177 449Q195 442 204 452Q213 458 214 471Q191 478 166 469Z" fill="url(#SHOE)" stroke="#7B7890" stroke-width="2"/>${sole}`,
+ sandals:`<path d="M106 468Q129 477 155 469M165 469Q193 477 217 468" stroke="#A67B59" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M109 451L152 461M169 461L211 451" stroke="url(#SHOE)" stroke-width="9" fill="none"/>`
  }[c.shoes];
  const career=c.outfit==='doctor', fire=c.outfit==='firefighter', build=c.outfit==='builder';
- const uniform=career?'#F6FBFF':fire?'#E4A94E':build?'#F0BE54':cloth;
- const bottom=c.outfit==='dress' ? `<path d="M123 315L112 395Q161 414 208 395L198 315Z" fill="${cloth}" stroke="#6B607A" stroke-opacity=".2" stroke-width="2"/>` : '';
- const bodyClothes = career ? `<path d="M118 236L151 223L161 245L171 223L203 236L211 354L109 354Z" fill="#FBFDFF" stroke="#A2BED0" stroke-width="2"/><path d="M151 223L157 326M171 223L164 326" stroke="#7DA4B5" stroke-width="3"/><path d="M129 282H149V304H129Z M175 282H194V304H175Z" fill="#E1F1FA"/><path d="M157 248H168V268H157Z" fill="#7EB69D"/>`
- : fire ? `<path d="M115 237Q159 220 205 237L211 351L109 351Z" fill="#D7A346" stroke="#966B37" stroke-width="2"/><path d="M119 261L204 261M115 320L208 320" stroke="#FFF4B5" stroke-width="10"/><path d="M159 233L159 348" stroke="#8D593D" stroke-width="4"/>`
- : build ? `<path d="M117 235L202 235L208 350L111 350Z" fill="${cloth}"/><path d="M124 232L133 351L186 351L198 232" stroke="#D8A04A" stroke-width="15" fill="none"/><path d="M135 277H185V335H135Z" fill="#EEC36E"/>`
- : c.outfit==='hoodie' ? `<path d="M115 236Q159 207 207 236L211 353L109 353Z" fill="${cloth}"/><path d="M129 234Q160 260 191 234" stroke="#F5E7D7" fill="none" stroke-width="10"/><path d="M136 308Q159 300 186 308L185 337H135Z" fill="${cloth}" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>`
- : c.outfit==='overalls' ? `<path d="M115 235H205L208 351H112Z" fill="#F4D8AB"/><path d="M128 263H192L195 357H125Z" fill="#6F9CC9"/><path d="M124 237L133 282M195 237L187 282" stroke="#6F9CC9" stroke-width="15"/><path d="M143 307H178" stroke="#DDE9F4" stroke-width="3"/>`
- : c.outfit==='sport' ? `<path d="M115 235H205L208 353H112Z" fill="${cloth}"/><path d="M117 260L205 260" stroke="#fff" stroke-width="8"/><path d="M159 242L159 344" stroke="#fff" stroke-opacity=".6" stroke-width="4"/>`
- : c.outfit==='dress' ? `<path d="M120 234Q160 218 200 234L211 355H109Z" fill="${cloth}"/><path d="M135 238Q160 256 185 238" fill="none" stroke="#fff" stroke-width="7"/>`
- : `<path d="M114 236Q159 222 205 236L209 353H111Z" fill="${cloth}"/><path d="M139 234Q160 251 181 234" stroke="#FFF1DA" stroke-width="6" fill="none"/>`;
- const accessory = c.accessory==='glasses' ? '<g fill="none" stroke="#423E54" stroke-width="5"><rect x="116" y="114" width="37" height="30" rx="12"/><rect x="167" y="114" width="37" height="30" rx="12"/><path d="M153 122Q160 116 167 122M116 126L105 121M204 126L217 121"/></g>'
- : c.accessory==='bow' ? `<g transform="translate(204 69)"><path d="M0 6Q-24 -14 -26 6Q-24 22 0 10Q25 23 27 6Q25 -12 0 6Z" fill="#EC7591" stroke="#BB5574" stroke-width="2"/><circle cy="8" r="8" fill="#FFD0D9"/></g>`
- : c.accessory==='cap' ? '<path d="M103 87Q108 30 164 38Q211 38 222 87Z" fill="#589AC7"/><path d="M142 88Q202 74 237 89Q210 108 143 100Z" fill="#3B709C"/>'
- : c.accessory==='freckles' ? '<g fill="#AD775C" opacity=".7"><circle cx="122" cy="146" r="2.2"/><circle cx="129" cy="150" r="2"/><circle cx="135" cy="146" r="2"/><circle cx="185" cy="146" r="2"/><circle cx="192" cy="150" r="2"/><circle cx="198" cy="146" r="2"/></g>'
- : c.accessory==='band' ? '<path d="M103 98Q110 43 158 45Q206 43 215 98" fill="none" stroke="#F5B855" stroke-width="9"/>' : '';
- const backpack=c.accessory==='backpack' ? '<path d="M108 237Q85 233 83 272L81 326Q96 338 119 324L118 247Z" fill="#E9A868" stroke="#9F744B" stroke-width="3"/>' : '';
- const headshadow='<ellipse cx="160" cy="494" rx="85" ry="14" fill="#40516C" opacity=".12"/>';
- const trousers = c.outfit==='dress'?'#F7E8D5': c.outfit==='sport'?'#344D68':build?'#55749A':fire?'#B17A3F':'#547DA3';
- return `<svg class="character-svg ${extraClass}" viewBox="0 0 320 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Мультяшный персонаж в полный рост">
- <defs><linearGradient id="shirtShine" x2="1" y2="1"><stop stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#15243B" stop-opacity=".06"/></linearGradient></defs>
- ${headshadow}
+ const mainCloth=career?'#F9FCFF':fire?'#DDA24E':build?'#EAC15B':cloth;
+ const top={
+ casual:`<path d="M118 231Q160 216 202 231L211 343Q160 349 109 343Z" fill="url(#CLOTH)" stroke="#71808F" stroke-opacity=".2" stroke-width="2"/><path d="M139 228Q160 245 182 228" fill="none" stroke="#F6E8D8" stroke-width="6"/>${girl?'<path d="M160 272C149 260 142 272 148 280L160 293L172 281C179 272 171 261 160 272Z" fill="#ED8DA3"/>':'<path d="M147 294L160 275L173 293L168 291L160 283L151 291Z" fill="#75A49B"/>'}`,
+ hoodie:`<path d="M114 233Q160 210 206 233L212 351H108Z" fill="url(#CLOTH)"/><path d="M130 235Q160 266 190 235" stroke="#E5E7EA" stroke-width="11" fill="none"/><path d="M139 306H182V330Q159 342 139 330Z" fill="${cloth}" stroke="#fff" stroke-opacity=".5" stroke-width="2"/><path d="M155 253L153 277M165 253L167 277" stroke="#fff" stroke-width="2"/>`,
+ overalls:`<path d="M113 232H207L210 347H110Z" fill="#FAEBD6"/><path d="M132 271H189L195 349H126Z" fill="url(#PANTS)"/><path d="M124 235L137 293M195 235L185 293" stroke="${bottoms}" stroke-width="15"/><rect x="146" y="301" width="29" height="22" rx="4" fill="#E5F3FF" opacity=".5"/>`,
+ sport:`<path d="M114 229H206L210 345H110Z" fill="url(#CLOTH)"/><path d="M114 260L208 260" stroke="#fff" stroke-width="7"/><path d="M137 231L146 346M184 231L176 346" stroke="#fff" stroke-opacity=".48" stroke-width="3"/>`,
+ dress:`<path d="M118 232L202 232L217 386Q164 411 103 386Z" fill="url(#CLOTH)"/><path d="M136 238Q160 254 185 238" stroke="#fff" stroke-width="6" fill="none"/><path d="M114 360Q159 375 208 360" stroke="#fff" stroke-opacity=".45" stroke-width="3" fill="none"/>`,
+ doctor:`<path d="M113 234L151 222L160 249L170 222L205 234L212 347H108Z" fill="#F9FCFF" stroke="#A8C4D3" stroke-width="2"/><path d="M150 225L155 333M170 225L165 333" stroke="#85AAB8" stroke-width="3"/><rect x="127" y="283" width="23" height="19" rx="3" fill="#D6EBF6"/><rect x="173" y="283" width="22" height="19" rx="3" fill="#D6EBF6"/><circle cx="160" cy="262" r="5" fill="#85B49B"/>`,
+ firefighter:`<path d="M114 235Q160 213 206 235L213 349H107Z" fill="url(#CLOTH)"/><path d="M116 267L208 267M112 316L210 316" stroke="#FFF1B5" stroke-width="11"/><path d="M161 239L161 342" stroke="#8F6246" stroke-width="4"/>`,
+ builder:`<path d="M116 233H204L211 346H109Z" fill="url(#CLOTH)"/><path d="M124 233L135 337H187L198 233" stroke="#F2C15F" stroke-width="15" fill="none"/><rect x="137" y="286" width="47" height="37" rx="5" fill="#E7BA63"/>`
+ }[c.outfit];
+ const eyesWide=c.eyes==='wide' ? 15 : 13;
+ const eyesSVG=c.eyes==='smile'
+ ? `<path d="M122 132Q136 118 149 132M171 132Q185 118 198 132" stroke="${eye}" stroke-width="5" stroke-linecap="round" fill="none"/>`
+ : [135,185].map(x=>`<g><ellipse cx="${x}" cy="129" rx="${c.eyes==='classic'?10:eyesWide}" ry="${c.eyes==='wide'?18:15}" fill="#FFFDFC"/><ellipse cx="${x}" cy="130" rx="${c.eyes==='wide'?10:8}" ry="${c.eyes==='wide'?12:10}" fill="${eye}"/><ellipse cx="${x}" cy="131" rx="5.5" ry="7.3" fill="#211E22"/><circle cx="${x-3}" cy="124" r="4" fill="#fff"/><circle cx="${x+4}" cy="133" r="1.6" fill="#fff"/><path d="M${x-14} 123Q${x} 111 ${x+14} 123" stroke="#554145" stroke-width="3.5" stroke-linecap="round" fill="none"/></g>`).join('');
+ const brows=c.brows==='straight'?'M123 107L149 106M171 106L197 107':c.brows==='arched'?'M123 110Q136 93 150 107M170 107Q184 93 197 110':'M124 109Q137 101 149 107M171 107Q184 101 196 109';
+ const nose=c.nose==='tiny'?'<circle cx="160" cy="148" r="2.5" fill="#B97466"/>':c.nose==='soft'?'<path d="M159 137L155 149Q160 153 165 149" stroke="#B77B69" stroke-width="2.3" stroke-linecap="round" fill="none"/>':'<path d="M154 146Q160 154 166 146" stroke="#B77B69" stroke-width="2.8" stroke-linecap="round" fill="none"/>';
+ const mouth={
+ smile:'<path d="M144 161Q160 179 176 161" stroke="#AE5D68" stroke-width="4" stroke-linecap="round" fill="none"/>',
+ grin:'<path d="M140 160Q160 183 180 160Q160 168 140 160Z" fill="#9C555D"/><path d="M147 163Q160 170 173 163" stroke="#fff" stroke-width="5" fill="none"/>',
+ gentle:'<path d="M151 163Q160 169 169 163" stroke="#A95663" stroke-width="3.5" stroke-linecap="round" fill="none"/>',
+ wow:'<ellipse cx="160" cy="166" rx="8" ry="10" fill="#9D4A56"/>'
+ }[c.mouth];
+ const accessories=c.accessory==='glasses'?'<g stroke="#584B58" stroke-width="4.4" fill="none"><rect x="115" y="113" width="38" height="33" rx="13"/><rect x="167" y="113" width="38" height="33" rx="13"/><path d="M153 121Q160 116 167 121M115 126L102 122M205 126L218 122"/></g>'
+ :c.accessory==='bow'?'<g transform="translate(210 69)"><path d="M0 6Q-24 -15 -27 6Q-24 24 0 10Q23 24 28 6Q25 -15 0 6Z" fill="#F18BAB" stroke="#A95071" stroke-width="2"/><circle cy="7" r="7" fill="#FFE2ED"/></g>'
+ :c.accessory==='cap'?'<path d="M103 91Q108 34 163 39Q213 39 220 93Z" fill="#72A7D4"/><path d="M141 91Q202 75 238 92Q210 111 142 103Z" fill="#4F81B5"/>'
+ :c.accessory==='freckles'?'<g fill="#B77B5B" opacity=".66"><circle cx="124" cy="151" r="2.1"/><circle cx="132" cy="154" r="1.8"/><circle cx="139" cy="150" r="1.6"/><circle cx="181" cy="150" r="1.6"/><circle cx="189" cy="154" r="1.8"/><circle cx="196" cy="151" r="2.1"/></g>'
+ :c.accessory==='band'?'<path d="M104 96Q111 42 160 44Q207 44 215 98" fill="none" stroke="#F8B8D2" stroke-width="8"/>':'';
+ const backpack=c.accessory==='backpack'?'<path d="M106 240Q85 240 81 269L78 323Q96 337 116 319L120 252Z" fill="#C3A1E4" stroke="#8B70AD" stroke-width="3"/>':'';
+ return `<svg class="character-svg ${extraClass}" viewBox="0 0 320 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${girl?'Девочка':'Мальчик'} — игровой персонаж в полный рост">
+ <defs>
+ <linearGradient id="${gid('skin')}" x1="0%" y1="0%" x2="100%" y2="20%"><stop stop-color="${mix(skin,255,.22)}"/><stop offset=".55" stop-color="${skin}"/><stop offset="1" stop-color="${mix(skin,0,.11)}"/></linearGradient>
+ <linearGradient id="${gid('hair')}" x1="0%" y1="0%" x2="100%" y2="30%"><stop stop-color="${mix(hair,255,.25)}"/><stop offset=".27" stop-color="${hair}"/><stop offset=".78" stop-color="${hair}"/><stop offset="1" stop-color="${mix(hair,0,.24)}"/></linearGradient>
+ <linearGradient id="${gid('cloth')}" x1="0%" y1="0%" x2="100%" y2="30%"><stop stop-color="${mix(mainCloth,255,.12)}"/><stop offset=".3" stop-color="${mainCloth}"/><stop offset=".85" stop-color="${mainCloth}"/><stop offset="1" stop-color="${mix(mainCloth,0,.11)}"/></linearGradient>
+ <linearGradient id="${gid('pants')}" x1="0%" y1="0%" x2="100%" y2="30%"><stop stop-color="${mix(bottoms,255,.14)}"/><stop offset=".35" stop-color="${bottoms}"/><stop offset="1" stop-color="${mix(bottoms,0,.2)}"/></linearGradient>
+ <linearGradient id="${gid('shoe')}" x1="0%" y1="0%" x2="100%" y2="40%"><stop stop-color="${mix(shoe,255,.16)}"/><stop offset=".55" stop-color="${shoe}"/><stop offset="1" stop-color="${mix(shoe,0,.24)}"/></linearGradient>
+ </defs>
+ <g style="--unused:0">
+ <ellipse cx="160" cy="490" rx="76" ry="11" fill="#304F61" opacity=".13"/>
  ${backpack}
- <path d="M123 334L151 334L150 454L120 454Z M170 334L199 334L198 454L169 454Z" fill="${trousers}"/>
- <path d="M122 347L150 347M170 347L198 347" stroke="#fff" stroke-opacity=".19" stroke-width="3"/>
- <rect x="129" y="435" width="21" height="23" rx="7" fill="${skin}"/><rect x="169" y="435" width="21" height="23" rx="7" fill="${skin}"/>
+ ${legs}${pants}
+ <path d="M128 432H149V452H125Z M172 432H193V452H170Z" fill="url(#${gid('skin')})"/>
  ${shoes}
- <path d="M118 243Q106 237 98 255L76 332Q69 354 88 359Q100 361 108 345L135 277Z" fill="${uniform}" stroke="#536379" stroke-opacity=".22" stroke-width="2"/>
- <path d="M201 243Q214 237 222 255L244 332Q251 354 232 359Q220 361 212 345L185 277Z" fill="${uniform}" stroke="#536379" stroke-opacity=".22" stroke-width="2"/>
- <ellipse cx="83" cy="359" rx="12" ry="18" fill="${skin}" transform="rotate(9 83 359)"/><ellipse cx="237" cy="359" rx="12" ry="18" fill="${skin}" transform="rotate(-9 237 359)"/>
- ${bodyClothes}${bottom}
- <path d="M114 239Q160 215 207 239L207 351H113Z" fill="url(#shirtShine)" opacity=".42"/>
- <path d="M146 195L146 235Q160 251 175 235L175 195Z" fill="${skin}"/>
- <g fill="${hair}">${backHair[c.hair]}</g>
- <ellipse cx="104" cy="136" rx="12" ry="17" fill="${skin}"/><ellipse cx="216" cy="136" rx="12" ry="17" fill="${skin}"/>
- <path d="${facePaths[c.face]}" fill="${skin}" stroke="#A5695E" stroke-opacity=".14" stroke-width="2"/>
- <ellipse cx="122" cy="149" rx="15" ry="8" fill="#ED8D8D" opacity=".24"/><ellipse cx="198" cy="149" rx="15" ry="8" fill="#ED8D8D" opacity=".24"/>
- <path d="${brow}" fill="none" stroke="${hair}" stroke-width="5" stroke-linecap="round"/>
- ${eyes}${nose}${mouth}
- <g fill="${hair}">${frontHair[c.hair]}</g>
- ${accessory}
- ${fire?'<path d="M109 95L112 60Q162 26 208 60L211 95Z" fill="#D74640"/><path d="M106 97H215" stroke="#F8D97A" stroke-width="10"/><circle cx="161" cy="65" r="10" fill="#FFE17B"/>':''}
- ${build?'<path d="M105 94Q108 50 160 42Q211 50 216 94Z" fill="#F2BB4C"/><path d="M103 93H218" stroke="#D99E31" stroke-width="10"/>':''}
- </svg>`;
+ <path d="M122 235Q108 228 97 244L77 325Q69 345 80 351L91 352Q99 350 105 334L135 273Z" fill="url(#${gid('skin')})"/>
+ <path d="M199 235Q213 229 223 244L243 325Q251 345 240 351L229 352Q221 350 215 334L185 273Z" fill="url(#${gid('skin')})"/>
+ <path d="M116 231Q105 232 97 244L89 276L112 289L132 246Z" fill="url(#${gid('cloth')})"/>
+ <path d="M204 231Q215 232 223 244L231 276L208 289L188 246Z" fill="url(#${gid('cloth')})"/>
+ <ellipse cx="84" cy="347" rx="12" ry="17" fill="url(#${gid('skin')})" transform="rotate(10 84 347)"/>
+ <ellipse cx="236" cy="347" rx="12" ry="17" fill="url(#${gid('skin')})" transform="rotate(-10 236 347)"/>
+ ${top}
+ <path d="M144 199L145 230Q160 247 176 230L176 199Z" fill="url(#${gid('skin')})"/>
+ <g fill="url(#${gid('hair')})">${backHair.replaceAll('url(#HAIRLIGHT)',`url(#${gid('hair')})`)}</g>
+ <ellipse cx="104" cy="139" rx="12" ry="17" fill="url(#${gid('skin')})"/><ellipse cx="216" cy="139" rx="12" ry="17" fill="url(#${gid('skin')})"/>
+ <path d="${face}" fill="url(#${gid('skin')})" stroke="#A7796E" stroke-opacity=".23" stroke-width="2"/>
+ <ellipse cx="121" cy="149" rx="17" ry="9" fill="#F58D91" opacity=".25"/><ellipse cx="199" cy="149" rx="17" ry="9" fill="#F58D91" opacity=".25"/>
+ <path d="${brows}" stroke="${hair}" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+ ${eyesSVG}${nose}${mouth}
+ <g fill="url(#${gid('hair')})">${frontHair.replaceAll('url(#HAIRLIGHT)',`url(#${gid('hair')})`)}</g>
+ ${accessories}
+ ${fire?'<path d="M108 99L112 59Q160 25 208 59L212 99Z" fill="#D74943"/><path d="M106 98H214" stroke="#FFE18D" stroke-width="10"/><circle cx="160" cy="64" r="10" fill="#FFE18D"/>':''}
+ ${build?'<path d="M105 98Q109 52 160 44Q211 50 215 98Z" fill="#F3BF58"/><path d="M105 96H215" stroke="#C99641" stroke-width="10"/>':''}
+ </g></svg>`.replaceAll('url(#SKIN)',`url(#${gid('skin')})`).replaceAll('url(#SHOE)',`url(#${gid('shoe')})`).replaceAll('url(#PANTS)',`url(#${gid('pants')})`).replaceAll('url(#CLOTH)',`url(#${gid('cloth')})`);
 }
 function paletteOptions(field, colors, label) {
  return `<div class="avatar-palette" role="group" aria-label="${label}">${colors.map((color,i)=>`<button class="palette-chip ${characterDraft[field]===i?'selected':''}" style="--swatch:${color}" data-character-field="${field}" data-character-value="${i}" aria-label="${label}: вариант ${i+1}" aria-pressed="${characterDraft[field]===i}"><span></span></button>`).join('')}</div>`;
 }
 function optionGrid(field, options) {
+ const emojis={hair:{tousled:'🧑',waves:'👩',short:'👦',bob:'💇',long:'👩',curly:'🧑‍🦱',spiky:'🧑‍🎤',ponytail:'🎀'},outfit:{casual:'👕',hoodie:'🧥',overalls:'🩳',sport:'🏃',dress:'👗',doctor:'🥼',firefighter:'🧑‍🚒',builder:'👷'},bottom:{shorts:'🩳',jeans:'👖',cargo:'👖',skirt:'👗'},shoes:{sneakers:'👟',boots:'🥾',slipons:'🥿',sandals:'🩴'},accessory:{none:'✨',glasses:'👓',cap:'🧢',bow:'🎀',backpack:'🎒',freckles:'🌸',band:'👑'}};
  return `<div class="avatar-option-grid">${options.map(([id,title])=>{
   const locked=field==='outfit'&&!characterUnlocked(id);
   const p=REQUIRED_PROFESSION[id];
   const suffix=locked?`<small>🔒 Пройди: ${professions[p].title}</small>`:'';
-  return `<button class="avatar-detail ${characterDraft[field]===id?'selected':''} ${locked?'is-locked':''}" ${locked?'disabled':''} data-character-field="${field}" data-character-value="${id}" aria-pressed="${characterDraft[field]===id}"><span>${field==='hair'?( {short:'👦',bob:'💇',long:'👩',curly:'🧑‍🦱',spiky:'🧑‍🎤',ponytail:'🎀'}[id]||'✨'): field==='outfit'?({casual:'👕',hoodie:'🧥',overalls:'🩳',sport:'🏃',dress:'👗',doctor:'🥼',firefighter:'🧑‍🚒',builder:'👷'}[id]||'👕'):field==='shoes'?'👟':field==='accessory'?'✨':'♡'}</span><strong>${title}</strong>${suffix}</button>`;
+  return `<button class="avatar-detail ${characterDraft[field]===id?'selected':''} ${locked?'is-locked':''}" ${locked?'disabled':''} data-character-field="${field}" data-character-value="${id}" aria-pressed="${characterDraft[field]===id}"><span>${emojis[field]?.[id]||'✨'}</span><strong>${title}</strong>${suffix}</button>`;
  }).join('')}</div>`;
 }
 function editorChoices() {
- const c=characterDraft;
- if(characterCategory==='skin') return `<h3>Цвет кожи</h3><p>Выбирай любой оттенок.</p>${paletteOptions('skin',SKINS,'Цвет кожи')}`;
+ if(characterCategory==='skin') return `<h3>Цвет кожи</h3><p>Выбирай любой оттенок — каждый красивый.</p>${paletteOptions('skin',SKINS,'Цвет кожи')}`;
  if(characterCategory==='face') return `<h3>Форма лица</h3>${optionGrid('face',CUSTOM_OPTIONS.face)}`;
  if(characterCategory==='eyes') return `<h3>Глаза</h3>${optionGrid('eyes',CUSTOM_OPTIONS.eyes)}<h3>Цвет глаз</h3>${paletteOptions('eyeColor',EYES,'Цвет глаз')}`;
  if(characterCategory==='nose') return `<h3>Нос</h3>${optionGrid('nose',CUSTOM_OPTIONS.nose)}`;
  if(characterCategory==='mouth') return `<h3>Рот</h3>${optionGrid('mouth',CUSTOM_OPTIONS.mouth)}`;
  if(characterCategory==='brows') return `<h3>Брови</h3>${optionGrid('brows',CUSTOM_OPTIONS.brows)}`;
  if(characterCategory==='hair') return `<h3>Причёска</h3>${optionGrid('hair',CUSTOM_OPTIONS.hair)}<h3>Цвет волос</h3>${paletteOptions('hairColor',HAIRS,'Цвет волос')}`;
- if(characterCategory==='outfit') return `<h3>Выбери одежду</h3><p>Наряды профессий откроются после заданий.</p>${optionGrid('outfit',CUSTOM_OPTIONS.outfit)}<h3>Цвет одежды</h3>${paletteOptions('outfitColor',CLOTHES,'Цвет одежды')}`;
- if(characterCategory==='shoes') return `<h3>Обувь</h3>${optionGrid('shoes',CUSTOM_OPTIONS.shoes)}`;
+ if(characterCategory==='outfit') return `<h3>Выбери верх</h3><p>Профессиональные наряды открываются в городе.</p>${optionGrid('outfit',CUSTOM_OPTIONS.outfit)}<h3>Цвет одежды</h3>${paletteOptions('outfitColor',CLOTHES,'Цвет верха')}`;
+ if(characterCategory==='bottom') return `<h3>Выбери низ</h3>${optionGrid('bottom',CUSTOM_OPTIONS.bottom)}<h3>Цвет низа</h3>${paletteOptions('bottomColor',BOTTOM_COLORS,'Цвет низа')}`;
+ if(characterCategory==='shoes') return `<h3>Обувь</h3>${optionGrid('shoes',CUSTOM_OPTIONS.shoes)}<h3>Цвет обуви</h3>${paletteOptions('shoeColor',SHOE_COLORS,'Цвет обуви')}`;
  return `<h3>Аксессуары</h3>${optionGrid('accessory',CUSTOM_OPTIONS.accessory)}`;
 }
 function renderCharacterEditor(insideOnboarding=false) {
  if(!characterDraft) characterDraft=normalizeCharacter(insideOnboarding?onboardingDraft.character:state.child.character);
- const active=CHARACTER_CATEGORIES.find(([id])=>id===characterCategory);
- return `<main class="avatar-editor-shell ${insideOnboarding?'avatar-first':''}"><div class="avatar-headline"><span class="eyebrow">БудуБуду · Мой герой</span><h1>Создай себя!</h1><p>Придумай своего мультяшного героя. Всё можно менять сколько угодно.</p></div>
+ const active=CHARACTER_CATEGORIES.find(([id])=>id===characterCategory)||CHARACTER_CATEGORIES[0];
+ return `<main class="avatar-editor-shell ${insideOnboarding?'avatar-first':''}"><div class="avatar-headline"><span class="eyebrow">БудуБуду · Мир профессий</span><h1>Создай своего героя!</h1><p>Мальчик или девочка? Выбирай героя, меняй причёску, одежду, цвет кожи и многое другое.</p></div>
  <section class="avatar-studio" aria-label="Редактор персонажа">
- <div class="avatar-preview-area"><div class="avatar-stage"><span class="avatar-stage-star star-left">✦</span><span class="avatar-stage-star star-right">✧</span>${avatarSVG(characterDraft)}<div class="avatar-stage-shadow"></div></div><div class="avatar-stage-hint">✨ Вот каким я буду в городе!</div>
- <div class="gender-switch" role="group" aria-label="Мальчик или девочка"><button class="${characterDraft.gender==='boy'?'selected':''}" data-character-field="gender" data-character-value="boy">👦 Мальчик</button><button class="${characterDraft.gender==='girl'?'selected':''}" data-character-field="gender" data-character-value="girl">👧 Девочка</button></div></div>
- <div class="avatar-controls"><div class="avatar-tabs" role="tablist" aria-label="Что изменить">${CHARACTER_CATEGORIES.map(([id,icon,title])=>`<button role="tab" aria-selected="${id===characterCategory}" class="avatar-tab ${id===characterCategory?'selected':''}" data-avatar-category="${id}"><span>${icon}</span>${title}</button>`).join('')}</div><div class="avatar-choices"><div class="eyebrow">${active[2]}</div>${editorChoices()}</div><div class="avatar-editor-actions"><button class="btn btn-soft" data-action="random-character">🎲 Сюрприз</button><button class="btn btn-primary" data-action="save-character">${insideOnboarding?'Герой готов! →':'💛 Сохранить героя'}</button></div><p class="avatar-privacy">🔒 Без фото, без оплаты. Внешность сохраняется на этом устройстве.</p></div>
+ <div class="avatar-preview-area"><div class="base-characters"><button class="base-character-card ${characterDraft.gender==='girl'?'selected':''}" data-character-field="gender" data-character-value="girl" aria-pressed="${characterDraft.gender==='girl'}">${avatarSVG(GIRL_BASE,'base-character-mini')}<strong>Девочка</strong></button><button class="base-character-card ${characterDraft.gender==='boy'?'selected':''}" data-character-field="gender" data-character-value="boy" aria-pressed="${characterDraft.gender==='boy'}">${avatarSVG(BOY_BASE,'base-character-mini')}<strong>Мальчик</strong></button></div>
+ <div class="avatar-stage"><span class="avatar-stage-star star-left">✦</span><span class="avatar-stage-star star-right">✧</span>${avatarSVG(characterDraft)}<div class="avatar-stage-shadow"></div></div><div class="avatar-stage-hint">✨ Твой герой будет жить и играть в городе!</div></div>
+ <div class="avatar-controls"><div class="avatar-tabs" role="tablist" aria-label="Что изменить">${CHARACTER_CATEGORIES.map(([id,icon,title])=>`<button role="tab" aria-selected="${id===characterCategory}" class="avatar-tab ${id===characterCategory?'selected':''}" data-avatar-category="${id}"><span>${icon}</span>${title}</button>`).join('')}</div><div class="avatar-choices"><div class="eyebrow">${active[2]}</div>${editorChoices()}</div><div class="avatar-editor-actions"><button class="btn btn-soft" data-action="random-character">🎲 Сюрприз</button><button class="btn btn-primary" data-action="save-character">${insideOnboarding?'Герой готов! →':'💛 Сохранить героя'}</button></div><p class="avatar-privacy">🔒 Без оплаты и фотографий. Внешность и прогресс сохраняются на этом устройстве.</p></div>
  </section></main>`;
 }
 function randomCharacter() {
  const choose=a=>a[Math.floor(Math.random()*a.length)];
- const changed=Object.fromEntries(Object.entries(CUSTOM_OPTIONS).map(([k,opts])=>[k,choose(opts.filter(([id])=>k!=='outfit'||characterUnlocked(id))[0] ? opts.filter(([id])=>k!=='outfit'||characterUnlocked(id)) : opts)[0]]));
- characterDraft=normalizeCharacter({...characterDraft,...changed,skin:Math.floor(Math.random()*SKINS.length),eyeColor:Math.floor(Math.random()*EYES.length),hairColor:Math.floor(Math.random()*HAIRS.length),outfitColor:Math.floor(Math.random()*CLOTHES.length)});
+ const changed=Object.fromEntries(Object.entries(CUSTOM_OPTIONS).map(([k,opts])=>[k,choose(opts.filter(([id])=>k!=='outfit'||characterUnlocked(id)))[0]]));
+ characterDraft=normalizeCharacter({...characterDraft,...changed,skin:Math.floor(Math.random()*SKINS.length),eyeColor:Math.floor(Math.random()*EYES.length),hairColor:Math.floor(Math.random()*HAIRS.length),outfitColor:Math.floor(Math.random()*CLOTHES.length),bottomColor:Math.floor(Math.random()*BOTTOM_COLORS.length),shoeColor:Math.floor(Math.random()*SHOE_COLORS.length)});
 }
 
 const STORAGE_KEY = "gorod-professiy-mvp-v1";
@@ -626,7 +675,8 @@ function bindEvents() {
   document.querySelectorAll('[data-character-field]').forEach(el=>el.onclick=()=>{
    const field=el.dataset.characterField, value=el.dataset.characterValue;
    if(field==='outfit' && !characterUnlocked(value)) return;
-   characterDraft[field]=['skin','eyeColor','hairColor','outfitColor'].includes(field)?Number(value):value;
+   if(field==='gender'){const skin=characterDraft.skin;characterDraft=normalizeCharacter({...((value==='boy')?BOY_BASE:GIRL_BASE),skin});}
+   else characterDraft[field]=['skin','eyeColor','hairColor','outfitColor','bottomColor','shoeColor'].includes(field)?Number(value):value;
    const y=window.scrollY;render();window.scrollTo(0,y);
   });
   document.querySelectorAll('[data-arcade-item]').forEach(el=>el.onclick=()=>{
@@ -694,6 +744,4 @@ function action(name) {
 setInterval(()=>{ if(state.onboarded && Object.values(state.buildings).some(b=>b.finishAt)) render(); },1000);
 render();
 
-</script>
-  </body>
-</html>
+</script></body></html>
