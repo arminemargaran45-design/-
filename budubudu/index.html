@@ -1,5 +1,5 @@
 <!doctype html><html lang="ru"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/><meta name="theme-color" content="#f7f3e8"/><meta name="description" content="БудуБуду — игра, в которой ребенок создает персонажа, изучает профессии и строит свой город"/>
-<title>БудуБуду — игра с мальчиком и девочкой</title><style>
+<title>БудуБуду — 3D редактор персонажей</title><style>
 :root {
   --ink: #24314a;
   --muted: #667187;
@@ -273,9 +273,62 @@ input:focus, select:focus { border-color: var(--blue-dark); }
 .city-character-button:hover .city-character{transform:translateY(-4px)}
 @media(max-width:850px){.avatar-studio{grid-template-columns:minmax(0,1fr);}.avatar-preview-area{position:static;display:block;}.avatar-stage{height:330px;}.base-characters{max-width:530px;margin:0 auto 9px}.avatar-tabs{grid-template-columns:repeat(6,minmax(0,1fr));}}
 @media(max-width:500px){.avatar-headline h1{font-size:36px;}.base-character-card{height:89px;}.base-character-card .base-character-mini{height:83px;width:60px;min-width:51px;}.base-character-card strong{font-size:12px;}.avatar-stage{height:282px;}.avatar-tabs{grid-template-columns:repeat(4,minmax(0,1fr));}.avatar-controls{padding:11px;}.avatar-stage .character-svg{max-width:280px;}}
+
+/* 3D production avatar renderer: interactive WebGL models, no flat SVG figures. */
+body { background: radial-gradient(circle at 50% -20%,#d5f4ff 0%,#ecf8ff 31%,#fff1d1 75%,#faf0df 100%); }
+.avatar-editor-shell{width:min(1420px,calc(100% - 36px));padding-top:20px;}
+.avatar-headline{margin-bottom:22px}
+.avatar-headline h1{display:flex;gap:.20em;align-items:center;justify-content:center;font-size:clamp(46px,7vw,86px);letter-spacing:-.075em;margin:1px 0 8px;text-shadow:0 4px #fff9,0 8px 24px #fff7;}
+.bb-orange{color:#ffaa35;-webkit-text-stroke:2px #ad593a;text-shadow:0 5px 0 #bd5b34,0 9px 16px #aa654077}
+.bb-blue{color:#54c2f9;-webkit-text-stroke:2px #3786b6;text-shadow:0 5px 0 #2579b5,0 9px 16px #488bc855}
+.avatar-headline p{font-weight:700;font-size:clamp(13px,1.35vw,17px);color:#536c8c}
+.avatar-studio{grid-template-columns:minmax(320px,1fr) minmax(390px,1.16fr);gap:20px;}
+.avatar-preview-area,.avatar-controls{background:rgba(255,255,255,.94);border:2px solid rgba(255,255,255,.92);box-shadow:0 17px 45px #6f86a934,0 1px 3px #6a759c12;border-radius:30px;}
+.avatar-preview-area{padding:15px;background:linear-gradient(145deg,#f6faff,#fff5e9)}
+.avatar-stage{height:515px;isolation:isolate;background:radial-gradient(ellipse at 50% 5%,#ffffffb0,#a8e2ff44 55%,transparent 80%),linear-gradient(to bottom,#c1e9fb 0%,#f8f1e8 64%,#e1d4bd 65%,#f9e8d9 100%);}
+.avatar-stage::before{content:'';position:absolute;left:0;right:0;top:21%;bottom:34px;inset:auto;border:0;width:100%;height:42%;background:radial-gradient(circle at 20% 80%,#8ec88966,transparent 22%),radial-gradient(circle at 85% 80%,#9ccf8466,transparent 23%),linear-gradient(to top,#c1dca959,transparent 50%);border-radius:0;z-index:-1;}
+.avatar-stage:after{content:'';position:absolute;bottom:25px;width:53%;height:35px;border-radius:50%;background:radial-gradient(ellipse,#46567436,transparent 66%);z-index:0;}
+.avatar-stage-shadow{display:none}
+.avatar-model3d{display:block;position:relative;width:100%;height:100%;overflow:hidden;}
+.avatar-model3d canvas{display:block;width:100%;height:100%;background:transparent;}
+.avatar-model3d.stage-model{max-width:100%;height:100%;z-index:2;touch-action:pan-y;cursor:grab;}
+.avatar-model3d.stage-model canvas{touch-action:pan-y;}
+.avatar-model3d.stage-model:active{cursor:grabbing;}
+.avatar3d-unsupported:after{content:attr(data-error);font-weight:800;position:absolute;top:50%;left:12%;right:12%;color:#a44040;text-align:center;}
+.base-characters{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:12px}
+.base-character-card{height:100px;display:flex;align-items:center;justify-content:center;gap:10px;background:#f9fcff;border:2px solid #e6eef8;border-radius:21px;cursor:pointer;font-size:16px;box-shadow:0 4px 10px #7b8ba618;}
+.base-character-card.selected{border-color:#ffb54f;background:#fff4dc;box-shadow:0 5px 14px #e8a95b22}
+.base-character-card .base-character-mini{height:90px;width:85px;flex:0 0 85px}
+.base-character-card strong{font-size:16px;color:#334b6a;}
+.avatar-stage-hint{font-size:14px;margin:14px 0 8px;color:#315b7a;}
+.avatar-controls{padding:20px;}
+.avatar-tabs{grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
+.avatar-tab{border-radius:18px;min-height:81px;font-size:12px;font-weight:900;background:#f2f6fb;border-color:#f8fafc;box-shadow:inset 0 1px #fff;}
+.avatar-tab span{font-size:27px;color:#6592c1;font-weight:900;}
+.avatar-tab.selected{border-color:#ffba56;background:#fff1d9;box-shadow:0 4px 9px #f5ca8b44;}
+.avatar-choices{min-height:216px;background:#fffdfa;border:1px solid #ebebee;border-radius:24px;padding:21px;margin-top:17px}
+.avatar-choices h3{font-size:25px;color:#263e60;margin:10px 0 7px}
+.avatar-choices p{font-size:14px}
+.avatar-palette{gap:14px;padding:18px 0}
+.palette-chip{height:49px;width:49px;}
+.avatar-options-with-models{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.avatar-detail{min-height:110px;border-radius:18px;border-color:#e5eaf2;overflow:hidden;}
+.avatar-detail .option-model{width:100%;height:93px;background:radial-gradient(ellipse,#edf6ff,#fff 85%);border-radius:12px;pointer-events:none}
+.avatar-detail .option-model.head-model{height:90px;}
+.avatar-detail strong{font-weight:900;color:#34496a;font-size:12px;}
+.avatar-detail.selected{background:#fff4e2;border-color:#ffb451;}
+.option-symbol{display:grid;place-items:center;border-radius:100%;height:50px;width:50px;margin:auto;background:linear-gradient(145deg,#b9e2fc,#ffe8bf);font-size:23px;color:#466c9b;font-weight:900}
+.avatar-editor-actions .btn-primary{background:linear-gradient(135deg,#ffd960,#ffae32);color:#583114;border:2px solid #f4ad31;box-shadow:0 9px 21px #efbc5678;font-size:16px;}
+.avatar-editor-actions .btn-soft{background:#e4f4ff;color:#316ea6;font-size:16px;}
+.character-mini{width:100%;height:100%;}
+.avatar-mini .character-mini{position:relative;left:auto;top:auto;width:100%;height:100%;}
+.city-character-button .city-character{width:165px;height:245px;max-width:100%;filter:none}
+.onboard-avatar .avatar-model3d{width:100%;height:200px}
+@media(max-width:970px){.avatar-studio{grid-template-columns:1fr;}.avatar-preview-area{position:static;}.avatar-stage{height:470px}.avatar-tabs{grid-template-columns:repeat(6,minmax(0,1fr));}}
+@media(max-width:580px){.avatar-editor-shell{width:calc(100% - 16px)}.avatar-headline h1{font-size:47px}.avatar-stage{height:360px}.avatar-preview-area{display:block}.avatar-stage-hint{margin-bottom:7px}.base-character-card{height:82px}.base-character-card .base-character-mini{height:71px;width:60px;flex-basis:60px}.base-character-card strong{font-size:13px}.avatar-tabs{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.avatar-tab{font-size:10px;min-height:70px}.avatar-tab span{font-size:23px}.avatar-options-with-models{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.avatar-detail .option-model{height:75px}.avatar-editor-shell{padding-bottom:115px}.avatar-controls{padding:11px}}
 </style></head><body><div id="app" aria-live="polite"></div>
 <script>
-// БудуБуду — modular, offline-first avatar editor. Characters are original layered SVG art.
+// БудуБуду — editor state, inputs, options and original WebGL avatar runtime.
 const SKINS = ['#FFE2C5','#F8C99E','#E6AE80','#BD805F','#976145','#694334'];
 const EYES = ['#4A3029','#74513A','#497B9B','#4E8A65','#7C69AC','#B6A28A'];
 const HAIRS = ['#332621','#5B352B','#8B5030','#BB753B','#E8B46E','#F0D87F','#1F2736','#AC5046','#9163AA'];
@@ -283,9 +336,9 @@ const CLOTHES = ['#6E9CCF','#E58C76','#89B79B','#B28DD2','#F0BB53','#42666C','#D
 const BOTTOM_COLORS = ['#7199B9','#EAA0A8','#B7A1CD','#85836A','#3C567B','#DFBB8B'];
 const SHOE_COLORS = ['#E9819E','#53916B','#7D94D8','#ECB752','#A58AB5','#E4E8EA'];
 const CHARACTER_CATEGORIES = [
- ['skin','🎨','Кожа'],['face','🙂','Лицо'],['eyes','👀','Глаза'],['nose','👃','Нос'],
- ['mouth','😊','Рот'],['brows','〰️','Брови'],['hair','💇','Волосы'],['outfit','👕','Верх'],
- ['bottom','🩳','Низ'],['shoes','👟','Обувь'],['accessory','🎀','Аксессуары']
+ ['skin','◉','Кожа'],['face','◡','Лицо'],['eyes','◎','Глаза'],['nose','⌄','Нос'],
+ ['mouth','⌣','Рот'],['brows','⌒','Брови'],['hair','♨','Волосы'],['outfit','▣','Верх'],
+ ['bottom','▥','Низ'],['shoes','▱','Обувь'],['accessory','✿','Аксессуары']
 ];
 const CUSTOM_OPTIONS = {
  face:[['oval','Овал'],['round','Круглое'],['soft','Сердечко']],
@@ -329,126 +382,20 @@ function characterUnlocked(outfit) {
  const profession=REQUIRED_PROFESSION[outfit];
  return !profession || (typeof state!=='undefined' && (state.professionProgress?.[profession]||0)>0);
 }
-function avatarSVG(raw, extraClass='') {
- const c=normalizeCharacter(raw), skin=SKINS[c.skin], eye=EYES[c.eyeColor], hair=HAIRS[c.hairColor];
- const cloth=CLOTHES[c.outfitColor], bottoms=BOTTOM_COLORS[c.bottomColor], shoe=SHOE_COLORS[c.shoeColor];
- const uid='bb'+(++avatarRenderCount); const gid=(x)=>uid+'-'+x;
- const mix=(hex,target,weight)=>'#'+[1,3,5].map(i=>Math.round(parseInt(hex.slice(i,i+2),16)*(1-weight)+target*weight).toString(16).padStart(2,'0')).join('');
- const girl = c.gender==='girl';
- const face={
-  oval:'M105 119 C103 77 119 56 160 54 C201 56 217 77 215 119 C215 166 190 193 160 194 C130 193 105 166 105 119Z',
-  round:'M100 117 C100 74 119 58 160 57 C201 58 220 74 220 117 C220 158 195 188 160 189 C125 188 100 158 100 117Z',
-  soft:'M104 119 C101 75 119 56 160 54 C201 56 219 75 216 119 C213 156 184 195 160 197 C136 195 107 156 104 119Z'
- }[c.face];
- const backHair={
-  tousled:'<path d="M98 112Q93 72 120 55Q155 24 191 48Q226 54 225 117L213 121L197 73L130 76L112 123Z"/>',
-  waves:'<path d="M101 96Q97 48 147 41Q206 29 222 84Q229 105 227 145Q229 197 245 266Q238 300 220 300Q207 290 206 270Q210 321 183 327Q169 315 174 278L193 94L126 91L125 275Q128 326 101 323Q82 313 91 277Q72 308 68 276Q87 219 91 166Q88 114 101 96Z"/>',
-  short:'<path d="M99 109Q94 57 132 49Q172 31 199 54Q224 70 221 114L206 96L114 104Z"/>',
-  bob:'<path d="M98 109Q97 47 159 42Q222 43 223 109L228 206Q207 223 191 210L191 104L128 103L128 211Q110 222 92 206Z"/>',
-  long:'<path d="M100 99Q95 43 160 40Q225 44 222 100L233 308Q208 328 191 295L193 94L127 94L129 295Q109 325 84 308Z"/>',
-  curly:'<g><circle cx="112" cy="69" r="25"/><circle cx="143" cy="47" r="27"/><circle cx="180" cy="47" r="28"/><circle cx="208" cy="73" r="26"/><circle cx="96" cy="105" r="22"/><circle cx="226" cy="109" r="22"/><circle cx="96" cy="157" r="22"/><circle cx="225" cy="160" r="22"/></g>',
-  spiky:'<path d="M98 108L83 73L108 78L110 43L133 55L156 29L169 51L198 35L202 62L232 57L217 91L220 117L201 86L123 87Z"/>',
-  ponytail:'<path d="M100 101Q99 43 160 41Q223 43 220 105L208 113L193 77L128 81L111 120Z"/><path d="M208 72Q255 67 258 133Q266 178 237 189Q247 133 206 111Z"/>'
- }[c.hair];
- const frontHair={
-  tousled:'<path d="M103 113Q92 79 106 66Q132 49 148 52Q164 28 181 48Q209 46 219 83L217 117Q202 99 193 80Q169 105 155 91Q135 114 113 100Z"/><path d="M121 64Q110 37 139 42Q150 49 144 65M165 49Q177 24 192 38Q198 51 182 61" fill="none" stroke="url(#HAIRLIGHT)" stroke-width="8" stroke-linecap="round"/>',
-  waves:'<path d="M100 110Q95 59 127 49Q157 29 193 44Q219 56 220 107Q208 102 205 87Q188 87 181 75Q150 106 128 92Q122 108 100 110Z"/><path d="M122 82Q110 115 111 155M211 110Q208 134 212 158" fill="none" stroke="url(#HAIRLIGHT)" stroke-width="9" stroke-linecap="round"/>',
-  short:'<path d="M104 103Q99 58 143 54Q168 72 193 56Q215 65 217 101Q194 98 182 84Q153 106 130 87L113 107Z"/>',
-  bob:'<path d="M102 107Q100 57 143 50Q181 41 213 79L214 111Q198 106 177 83Q148 112 102 107Z"/>',
-  long:'<path d="M103 111Q102 46 160 46Q211 42 219 111Q206 112 196 82Q159 113 131 93L115 121Z"/>',
-  curly:'<g><circle cx="118" cy="72" r="24"/><circle cx="148" cy="67" r="25"/><circle cx="182" cy="66" r="24"/><circle cx="205" cy="87" r="19"/></g>',
-  spiky:'<path d="M106 102L100 67L124 78L143 53L159 73L188 49L195 80L219 75L212 106Q182 92 158 104Q124 94 106 102Z"/>',
-  ponytail:'<path d="M105 108Q100 59 146 51Q178 42 214 69Q193 89 168 82Q142 105 105 108Z"/>'
- }[c.hair];
- // Legs are separate from trousers: shorts and skirts always leave the knees visible.
- const legs=`<path d="M124 334Q136 328 150 336L150 448Q146 456 128 453L122 364Z" fill="url(#SKIN)"/><path d="M171 336Q187 330 198 334L199 453Q182 457 170 448Z" fill="url(#SKIN)"/>`;
- let pants='';
- if(c.outfit!=='dress') {
-   if(c.bottom==='jeans') pants=`<path d="M115 332H205L198 444L170 444L161 366L151 444L120 444Z" fill="url(#PANTS)" stroke="#46647D" stroke-opacity=".22" stroke-width="2"/><path d="M160 332L160 359M133 370L132 430M187 370L187 430" fill="none" stroke="#fff" stroke-opacity=".36" stroke-width="2"/>`;
-   else if(c.bottom==='skirt') pants=`<path d="M115 331L104 389Q160 413 216 389L205 331Z" fill="url(#PANTS)" stroke="#54637F" stroke-opacity=".18" stroke-width="2"/><path d="M124 342Q159 349 197 342M133 366L126 390M183 366L192 392" stroke="#fff" stroke-opacity=".5" stroke-width="2.5" fill="none"/>`;
-   else pants=`<path d="M116 330H204L203 377Q187 386 167 377L162 357L153 377Q132 386 116 377Z" fill="url(#PANTS)" stroke="#3D607A" stroke-opacity=".24" stroke-width="2"/><path d="M160 331L162 357M124 370Q136 377 149 370M173 370Q186 376 197 370" stroke="#fff" stroke-opacity=".4" stroke-width="2" fill="none"/>${c.bottom==='cargo'?'<path d="M114 351L133 351L133 371L113 371Z M186 351H206V371H186Z" fill="url(#PANTS)" stroke="#273E57" stroke-opacity=".45" stroke-width="2"/><path d="M114 357L133 357M186 357H205" stroke="#fff" stroke-opacity=".4" stroke-width="2"/>':''}`;
- }
- const sole=`<path d="M105 469Q132 475 153 467M167 467Q187 475 215 469" stroke="#F8FCFF" stroke-width="6" stroke-linecap="round"/>`;
- const shoes={
- sneakers:`<path d="M126 443L148 444L154 463Q154 473 134 475L103 472Q100 459 112 451Z M174 443L192 443Q206 449 216 461Q220 471 211 473L171 474L166 461Z" fill="url(#SHOE)" stroke="#607282" stroke-opacity=".55" stroke-width="2.4"/><path d="M112 461L149 461M170 461L207 461" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M123 450L139 455M176 455L192 450" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>${sole}`,
- boots:`<path d="M123 420H150L154 466Q151 478 108 474L107 457L120 445Z M171 420H197L199 445L214 457L215 474Q174 478 167 466Z" fill="#966A55" stroke="#634737" stroke-width="2.5"/><path d="M109 469L154 469M167 469L215 469" stroke="#F7EEE5" stroke-width="6"/>`,
- slipons:`<path d="M119 449Q138 442 147 451L154 469Q130 478 106 471Q108 452 119 449Z M177 449Q195 442 204 452Q213 458 214 471Q191 478 166 469Z" fill="url(#SHOE)" stroke="#7B7890" stroke-width="2"/>${sole}`,
- sandals:`<path d="M106 468Q129 477 155 469M165 469Q193 477 217 468" stroke="#A67B59" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M109 451L152 461M169 461L211 451" stroke="url(#SHOE)" stroke-width="9" fill="none"/>`
- }[c.shoes];
- const career=c.outfit==='doctor', fire=c.outfit==='firefighter', build=c.outfit==='builder';
- const mainCloth=career?'#F9FCFF':fire?'#DDA24E':build?'#EAC15B':cloth;
- const top={
- casual:`<path d="M118 231Q160 216 202 231L211 343Q160 349 109 343Z" fill="url(#CLOTH)" stroke="#71808F" stroke-opacity=".2" stroke-width="2"/><path d="M139 228Q160 245 182 228" fill="none" stroke="#F6E8D8" stroke-width="6"/>${girl?'<path d="M160 272C149 260 142 272 148 280L160 293L172 281C179 272 171 261 160 272Z" fill="#ED8DA3"/>':'<path d="M147 294L160 275L173 293L168 291L160 283L151 291Z" fill="#75A49B"/>'}`,
- hoodie:`<path d="M114 233Q160 210 206 233L212 351H108Z" fill="url(#CLOTH)"/><path d="M130 235Q160 266 190 235" stroke="#E5E7EA" stroke-width="11" fill="none"/><path d="M139 306H182V330Q159 342 139 330Z" fill="${cloth}" stroke="#fff" stroke-opacity=".5" stroke-width="2"/><path d="M155 253L153 277M165 253L167 277" stroke="#fff" stroke-width="2"/>`,
- overalls:`<path d="M113 232H207L210 347H110Z" fill="#FAEBD6"/><path d="M132 271H189L195 349H126Z" fill="url(#PANTS)"/><path d="M124 235L137 293M195 235L185 293" stroke="${bottoms}" stroke-width="15"/><rect x="146" y="301" width="29" height="22" rx="4" fill="#E5F3FF" opacity=".5"/>`,
- sport:`<path d="M114 229H206L210 345H110Z" fill="url(#CLOTH)"/><path d="M114 260L208 260" stroke="#fff" stroke-width="7"/><path d="M137 231L146 346M184 231L176 346" stroke="#fff" stroke-opacity=".48" stroke-width="3"/>`,
- dress:`<path d="M118 232L202 232L217 386Q164 411 103 386Z" fill="url(#CLOTH)"/><path d="M136 238Q160 254 185 238" stroke="#fff" stroke-width="6" fill="none"/><path d="M114 360Q159 375 208 360" stroke="#fff" stroke-opacity=".45" stroke-width="3" fill="none"/>`,
- doctor:`<path d="M113 234L151 222L160 249L170 222L205 234L212 347H108Z" fill="#F9FCFF" stroke="#A8C4D3" stroke-width="2"/><path d="M150 225L155 333M170 225L165 333" stroke="#85AAB8" stroke-width="3"/><rect x="127" y="283" width="23" height="19" rx="3" fill="#D6EBF6"/><rect x="173" y="283" width="22" height="19" rx="3" fill="#D6EBF6"/><circle cx="160" cy="262" r="5" fill="#85B49B"/>`,
- firefighter:`<path d="M114 235Q160 213 206 235L213 349H107Z" fill="url(#CLOTH)"/><path d="M116 267L208 267M112 316L210 316" stroke="#FFF1B5" stroke-width="11"/><path d="M161 239L161 342" stroke="#8F6246" stroke-width="4"/>`,
- builder:`<path d="M116 233H204L211 346H109Z" fill="url(#CLOTH)"/><path d="M124 233L135 337H187L198 233" stroke="#F2C15F" stroke-width="15" fill="none"/><rect x="137" y="286" width="47" height="37" rx="5" fill="#E7BA63"/>`
- }[c.outfit];
- const eyesWide=c.eyes==='wide' ? 15 : 13;
- const eyesSVG=c.eyes==='smile'
- ? `<path d="M122 132Q136 118 149 132M171 132Q185 118 198 132" stroke="${eye}" stroke-width="5" stroke-linecap="round" fill="none"/>`
- : [135,185].map(x=>`<g><ellipse cx="${x}" cy="129" rx="${c.eyes==='classic'?10:eyesWide}" ry="${c.eyes==='wide'?18:15}" fill="#FFFDFC"/><ellipse cx="${x}" cy="130" rx="${c.eyes==='wide'?10:8}" ry="${c.eyes==='wide'?12:10}" fill="${eye}"/><ellipse cx="${x}" cy="131" rx="5.5" ry="7.3" fill="#211E22"/><circle cx="${x-3}" cy="124" r="4" fill="#fff"/><circle cx="${x+4}" cy="133" r="1.6" fill="#fff"/><path d="M${x-14} 123Q${x} 111 ${x+14} 123" stroke="#554145" stroke-width="3.5" stroke-linecap="round" fill="none"/></g>`).join('');
- const brows=c.brows==='straight'?'M123 107L149 106M171 106L197 107':c.brows==='arched'?'M123 110Q136 93 150 107M170 107Q184 93 197 110':'M124 109Q137 101 149 107M171 107Q184 101 196 109';
- const nose=c.nose==='tiny'?'<circle cx="160" cy="148" r="2.5" fill="#B97466"/>':c.nose==='soft'?'<path d="M159 137L155 149Q160 153 165 149" stroke="#B77B69" stroke-width="2.3" stroke-linecap="round" fill="none"/>':'<path d="M154 146Q160 154 166 146" stroke="#B77B69" stroke-width="2.8" stroke-linecap="round" fill="none"/>';
- const mouth={
- smile:'<path d="M144 161Q160 179 176 161" stroke="#AE5D68" stroke-width="4" stroke-linecap="round" fill="none"/>',
- grin:'<path d="M140 160Q160 183 180 160Q160 168 140 160Z" fill="#9C555D"/><path d="M147 163Q160 170 173 163" stroke="#fff" stroke-width="5" fill="none"/>',
- gentle:'<path d="M151 163Q160 169 169 163" stroke="#A95663" stroke-width="3.5" stroke-linecap="round" fill="none"/>',
- wow:'<ellipse cx="160" cy="166" rx="8" ry="10" fill="#9D4A56"/>'
- }[c.mouth];
- const accessories=c.accessory==='glasses'?'<g stroke="#584B58" stroke-width="4.4" fill="none"><rect x="115" y="113" width="38" height="33" rx="13"/><rect x="167" y="113" width="38" height="33" rx="13"/><path d="M153 121Q160 116 167 121M115 126L102 122M205 126L218 122"/></g>'
- :c.accessory==='bow'?'<g transform="translate(210 69)"><path d="M0 6Q-24 -15 -27 6Q-24 24 0 10Q23 24 28 6Q25 -15 0 6Z" fill="#F18BAB" stroke="#A95071" stroke-width="2"/><circle cy="7" r="7" fill="#FFE2ED"/></g>'
- :c.accessory==='cap'?'<path d="M103 91Q108 34 163 39Q213 39 220 93Z" fill="#72A7D4"/><path d="M141 91Q202 75 238 92Q210 111 142 103Z" fill="#4F81B5"/>'
- :c.accessory==='freckles'?'<g fill="#B77B5B" opacity=".66"><circle cx="124" cy="151" r="2.1"/><circle cx="132" cy="154" r="1.8"/><circle cx="139" cy="150" r="1.6"/><circle cx="181" cy="150" r="1.6"/><circle cx="189" cy="154" r="1.8"/><circle cx="196" cy="151" r="2.1"/></g>'
- :c.accessory==='band'?'<path d="M104 96Q111 42 160 44Q207 44 215 98" fill="none" stroke="#F8B8D2" stroke-width="8"/>':'';
- const backpack=c.accessory==='backpack'?'<path d="M106 240Q85 240 81 269L78 323Q96 337 116 319L120 252Z" fill="#C3A1E4" stroke="#8B70AD" stroke-width="3"/>':'';
- return `<svg class="character-svg ${extraClass}" viewBox="0 0 320 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${girl?'Девочка':'Мальчик'} — игровой персонаж в полный рост">
- <defs>
- <linearGradient id="${gid('skin')}" x1="0%" y1="0%" x2="100%" y2="20%"><stop stop-color="${mix(skin,255,.22)}"/><stop offset=".55" stop-color="${skin}"/><stop offset="1" stop-color="${mix(skin,0,.11)}"/></linearGradient>
- <linearGradient id="${gid('hair')}" x1="0%" y1="0%" x2="100%" y2="30%"><stop stop-color="${mix(hair,255,.25)}"/><stop offset=".27" stop-color="${hair}"/><stop offset=".78" stop-color="${hair}"/><stop offset="1" stop-color="${mix(hair,0,.24)}"/></linearGradient>
- <linearGradient id="${gid('cloth')}" x1="0%" y1="0%" x2="100%" y2="30%"><stop stop-color="${mix(mainCloth,255,.12)}"/><stop offset=".3" stop-color="${mainCloth}"/><stop offset=".85" stop-color="${mainCloth}"/><stop offset="1" stop-color="${mix(mainCloth,0,.11)}"/></linearGradient>
- <linearGradient id="${gid('pants')}" x1="0%" y1="0%" x2="100%" y2="30%"><stop stop-color="${mix(bottoms,255,.14)}"/><stop offset=".35" stop-color="${bottoms}"/><stop offset="1" stop-color="${mix(bottoms,0,.2)}"/></linearGradient>
- <linearGradient id="${gid('shoe')}" x1="0%" y1="0%" x2="100%" y2="40%"><stop stop-color="${mix(shoe,255,.16)}"/><stop offset=".55" stop-color="${shoe}"/><stop offset="1" stop-color="${mix(shoe,0,.24)}"/></linearGradient>
- </defs>
- <g style="--unused:0">
- <ellipse cx="160" cy="490" rx="76" ry="11" fill="#304F61" opacity=".13"/>
- ${backpack}
- ${legs}${pants}
- <path d="M128 432H149V452H125Z M172 432H193V452H170Z" fill="url(#${gid('skin')})"/>
- ${shoes}
- <path d="M122 235Q108 228 97 244L77 325Q69 345 80 351L91 352Q99 350 105 334L135 273Z" fill="url(#${gid('skin')})"/>
- <path d="M199 235Q213 229 223 244L243 325Q251 345 240 351L229 352Q221 350 215 334L185 273Z" fill="url(#${gid('skin')})"/>
- <path d="M116 231Q105 232 97 244L89 276L112 289L132 246Z" fill="url(#${gid('cloth')})"/>
- <path d="M204 231Q215 232 223 244L231 276L208 289L188 246Z" fill="url(#${gid('cloth')})"/>
- <ellipse cx="84" cy="347" rx="12" ry="17" fill="url(#${gid('skin')})" transform="rotate(10 84 347)"/>
- <ellipse cx="236" cy="347" rx="12" ry="17" fill="url(#${gid('skin')})" transform="rotate(-10 236 347)"/>
- ${top}
- <path d="M144 199L145 230Q160 247 176 230L176 199Z" fill="url(#${gid('skin')})"/>
- <g fill="url(#${gid('hair')})">${backHair.replaceAll('url(#HAIRLIGHT)',`url(#${gid('hair')})`)}</g>
- <ellipse cx="104" cy="139" rx="12" ry="17" fill="url(#${gid('skin')})"/><ellipse cx="216" cy="139" rx="12" ry="17" fill="url(#${gid('skin')})"/>
- <path d="${face}" fill="url(#${gid('skin')})" stroke="#A7796E" stroke-opacity=".23" stroke-width="2"/>
- <ellipse cx="121" cy="149" rx="17" ry="9" fill="#F58D91" opacity=".25"/><ellipse cx="199" cy="149" rx="17" ry="9" fill="#F58D91" opacity=".25"/>
- <path d="${brows}" stroke="${hair}" stroke-width="4.5" stroke-linecap="round" fill="none"/>
- ${eyesSVG}${nose}${mouth}
- <g fill="url(#${gid('hair')})">${frontHair.replaceAll('url(#HAIRLIGHT)',`url(#${gid('hair')})`)}</g>
- ${accessories}
- ${fire?'<path d="M108 99L112 59Q160 25 208 59L212 99Z" fill="#D74943"/><path d="M106 98H214" stroke="#FFE18D" stroke-width="10"/><circle cx="160" cy="64" r="10" fill="#FFE18D"/>':''}
- ${build?'<path d="M105 98Q109 52 160 44Q211 50 215 98Z" fill="#F3BF58"/><path d="M105 96H215" stroke="#C99641" stroke-width="10"/>':''}
- </g></svg>`.replaceAll('url(#SKIN)',`url(#${gid('skin')})`).replaceAll('url(#SHOE)',`url(#${gid('shoe')})`).replaceAll('url(#PANTS)',`url(#${gid('pants')})`).replaceAll('url(#CLOTH)',`url(#${gid('cloth')})`);
-}
+// Runtime avatarMarkup is injected by avatar-3d.js after this file loads.
+let avatarSVG;
+
 function paletteOptions(field, colors, label) {
  return `<div class="avatar-palette" role="group" aria-label="${label}">${colors.map((color,i)=>`<button class="palette-chip ${characterDraft[field]===i?'selected':''}" style="--swatch:${color}" data-character-field="${field}" data-character-value="${i}" aria-label="${label}: вариант ${i+1}" aria-pressed="${characterDraft[field]===i}"><span></span></button>`).join('')}</div>`;
 }
 function optionGrid(field, options) {
- const emojis={hair:{tousled:'🧑',waves:'👩',short:'👦',bob:'💇',long:'👩',curly:'🧑‍🦱',spiky:'🧑‍🎤',ponytail:'🎀'},outfit:{casual:'👕',hoodie:'🧥',overalls:'🩳',sport:'🏃',dress:'👗',doctor:'🥼',firefighter:'🧑‍🚒',builder:'👷'},bottom:{shorts:'🩳',jeans:'👖',cargo:'👖',skirt:'👗'},shoes:{sneakers:'👟',boots:'🥾',slipons:'🥿',sandals:'🩴'},accessory:{none:'✨',glasses:'👓',cap:'🧢',bow:'🎀',backpack:'🎒',freckles:'🌸',band:'👑'}};
- return `<div class="avatar-option-grid">${options.map(([id,title])=>{
+ const showModel=['hair','outfit','bottom','shoes','accessory'].includes(field);
+ return `<div class="avatar-option-grid ${showModel?'avatar-options-with-models':''}">${options.map(([id,title])=>{
   const locked=field==='outfit'&&!characterUnlocked(id);
   const p=REQUIRED_PROFESSION[id];
-  const suffix=locked?`<small>🔒 Пройди: ${professions[p].title}</small>`:'';
-  return `<button class="avatar-detail ${characterDraft[field]===id?'selected':''} ${locked?'is-locked':''}" ${locked?'disabled':''} data-character-field="${field}" data-character-value="${id}" aria-pressed="${characterDraft[field]===id}"><span>${emojis[field]?.[id]||'✨'}</span><strong>${title}</strong>${suffix}</button>`;
+  const suffix=locked?`<small>Откроется: ${professions[p].title}</small>`:'';
+  const preview=showModel?avatarSVG({...characterDraft,[field]:id},field==='hair'?'option-model head-model':'option-model'):`<span class="option-symbol" aria-hidden="true">${(title||'').slice(0,1)}</span>`;
+  return `<button class="avatar-detail ${characterDraft[field]===id?'selected':''} ${locked?'is-locked':''}" ${locked?'disabled':''} data-character-field="${field}" data-character-value="${id}" aria-pressed="${characterDraft[field]===id}">${preview}<strong>${title}</strong>${suffix}</button>`;
  }).join('')}</div>`;
 }
 function editorChoices() {
@@ -467,11 +414,11 @@ function editorChoices() {
 function renderCharacterEditor(insideOnboarding=false) {
  if(!characterDraft) characterDraft=normalizeCharacter(insideOnboarding?onboardingDraft.character:state.child.character);
  const active=CHARACTER_CATEGORIES.find(([id])=>id===characterCategory)||CHARACTER_CATEGORIES[0];
- return `<main class="avatar-editor-shell ${insideOnboarding?'avatar-first':''}"><div class="avatar-headline"><span class="eyebrow">БудуБуду · Мир профессий</span><h1>Создай своего героя!</h1><p>Мальчик или девочка? Выбирай героя, меняй причёску, одежду, цвет кожи и многое другое.</p></div>
+ return `<main class="avatar-editor-shell ${insideOnboarding?'avatar-first':''}"><div class="avatar-headline"><span class="eyebrow">БудуБуду · Мир профессий</span><h1><span class="bb-orange">Буду</span><span class="bb-blue">Буду</span></h1><p>Создай своего героя — выбери внешность, причёску, одежду и аксессуары!</p></div>
  <section class="avatar-studio" aria-label="Редактор персонажа">
  <div class="avatar-preview-area"><div class="base-characters"><button class="base-character-card ${characterDraft.gender==='girl'?'selected':''}" data-character-field="gender" data-character-value="girl" aria-pressed="${characterDraft.gender==='girl'}">${avatarSVG(GIRL_BASE,'base-character-mini')}<strong>Девочка</strong></button><button class="base-character-card ${characterDraft.gender==='boy'?'selected':''}" data-character-field="gender" data-character-value="boy" aria-pressed="${characterDraft.gender==='boy'}">${avatarSVG(BOY_BASE,'base-character-mini')}<strong>Мальчик</strong></button></div>
- <div class="avatar-stage"><span class="avatar-stage-star star-left">✦</span><span class="avatar-stage-star star-right">✧</span>${avatarSVG(characterDraft)}<div class="avatar-stage-shadow"></div></div><div class="avatar-stage-hint">✨ Твой герой будет жить и играть в городе!</div></div>
- <div class="avatar-controls"><div class="avatar-tabs" role="tablist" aria-label="Что изменить">${CHARACTER_CATEGORIES.map(([id,icon,title])=>`<button role="tab" aria-selected="${id===characterCategory}" class="avatar-tab ${id===characterCategory?'selected':''}" data-avatar-category="${id}"><span>${icon}</span>${title}</button>`).join('')}</div><div class="avatar-choices"><div class="eyebrow">${active[2]}</div>${editorChoices()}</div><div class="avatar-editor-actions"><button class="btn btn-soft" data-action="random-character">🎲 Сюрприз</button><button class="btn btn-primary" data-action="save-character">${insideOnboarding?'Герой готов! →':'💛 Сохранить героя'}</button></div><p class="avatar-privacy">🔒 Без оплаты и фотографий. Внешность и прогресс сохраняются на этом устройстве.</p></div>
+ <div class="avatar-stage">${avatarSVG(characterDraft)}<div class="avatar-stage-shadow"></div></div><div class="avatar-stage-hint">Твой герой будет жить и играть в городе!</div></div>
+ <div class="avatar-controls"><div class="avatar-tabs" role="tablist" aria-label="Что изменить">${CHARACTER_CATEGORIES.map(([id,icon,title])=>`<button role="tab" aria-selected="${id===characterCategory}" class="avatar-tab ${id===characterCategory?'selected':''}" data-avatar-category="${id}"><span>${icon}</span>${title}</button>`).join('')}</div><div class="avatar-choices"><div class="eyebrow">${active[2]}</div>${editorChoices()}</div><div class="avatar-editor-actions"><button class="btn btn-soft" data-action="random-character">Сюрприз</button><button class="btn btn-primary" data-action="save-character">${insideOnboarding?'Герой готов! →':'Сохранить героя'}</button></div><p class="avatar-privacy">Без оплаты и фотографий. Внешность и прогресс сохраняются на этом устройстве.</p></div>
  </section></main>`;
 }
 function randomCharacter() {
@@ -479,6 +426,451 @@ function randomCharacter() {
  const changed=Object.fromEntries(Object.entries(CUSTOM_OPTIONS).map(([k,opts])=>[k,choose(opts.filter(([id])=>k!=='outfit'||characterUnlocked(id)))[0]]));
  characterDraft=normalizeCharacter({...characterDraft,...changed,skin:Math.floor(Math.random()*SKINS.length),eyeColor:Math.floor(Math.random()*EYES.length),hairColor:Math.floor(Math.random()*HAIRS.length),outfitColor:Math.floor(Math.random()*CLOTHES.length),bottomColor:Math.floor(Math.random()*BOTTOM_COLORS.length),shoeColor:Math.floor(Math.random()*SHOE_COLORS.length)});
 }
+
+/* БудуБуду — original 3D child-avatars, WebGL1, fully self-contained and offline.
+   Meshes are real triangles, lit in the GPU, not SVG, emoji or image sprites.
+   The scene geometry is parametric and is regenerated from the saved character schema.
+*/
+(() => {
+'use strict';
+const WEBGL_VERSION = 'Budubudu 3D 1.0';
+const hexRGB = hex => {
+  const s=(hex||'#ffffff').replace('#','');
+  return [0,2,4].map(i => parseInt(s.slice(i,i+2),16)/255);
+};
+const lighten=(hex,amount=.12)=>{
+  let c=hexRGB(hex); return c.map(x=>Math.min(1,x+(1-x)*amount));
+};
+const darken=(hex,amount=.12)=>hexRGB(hex).map(x=>Math.max(0,x*(1-amount)));
+const mix=(a,b,t)=>a.map((x,i)=>x*(1-t)+b[i]*t);
+const unit=(v)=>{const l=Math.hypot(...v)||1;return v.map(x=>x/l)};
+const diff=(a,b)=>a.map((x,i)=>x-b[i]);
+const add=(a,b)=>a.map((x,i)=>x+b[i]);
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+
+class MeshBuilder {
+ constructor(){this.p=[];this.n=[];this.c=[];this.gloss=[];}
+ tri(a,b,c,color,shine=0,na,nb,nc){
+  const normal=unit(cross(diff(b,a),diff(c,a)));
+  for(const [v,n] of [[a,na||normal],[b,nb||normal],[c,nc||normal]]){
+   this.p.push(...v);this.n.push(...unit(n));this.c.push(...color);this.gloss.push(shine);
+  }
+ }
+ quad(a,b,c,d,color,shine=0){this.tri(a,b,c,color,shine);this.tri(a,c,d,color,shine)}
+ // Ellipsoidal organic surfaces with smooth normals, and optional Z-plane tilt.
+ ell(x,y,z,rx,ry,rz,color,shine=.12,twist=0,lon=22,lat=15){
+  const vertices=[], normals=[];let ct=Math.cos(twist), st=Math.sin(twist);
+  for(let j=0;j<=lat;j++){
+   const th=j*Math.PI/lat;for(let i=0;i<=lon;i++){
+    const ph=i*Math.PI*2/lon, a=Math.sin(th)*Math.cos(ph), b=Math.cos(th), d=Math.sin(th)*Math.sin(ph);
+    const xp=a*rx,yp=b*ry;
+    vertices.push([x+xp*ct-yp*st,y+xp*st+yp*ct,z+d*rz]);
+    normals.push(unit([a/rx*ct-b/ry*st,a/rx*st+b/ry*ct,d/rz]));
+   }
+  }
+  for(let j=0;j<lat;j++)for(let i=0;i<lon;i++){
+   const k=j*(lon+1)+i,l=k+lon+1;
+   this.tri(vertices[k],vertices[l],vertices[k+1],color,shine,normals[k],normals[l],normals[k+1]);
+   this.tri(vertices[k+1],vertices[l],vertices[l+1],color,shine,normals[k+1],normals[l],normals[l+1]);
+  }
+ }
+ // Smooth curved tube along a piecewise Catmull-Rom interpolated path.
+ tube(points,radii,color,shine=.10,radial=8,detail=5){
+  const knots=[];
+  for(let i=0;i<points.length-1;i++)for(let k=0;k<detail;k++){
+   let t=k/detail, t2=t*t, t3=t2*t;
+   const p0=points[Math.max(0,i-1)],p1=points[i],p2=points[i+1],p3=points[Math.min(points.length-1,i+2)];
+   const c=p1.map((v,n)=>.5*((2*v)+(-p0[n]+p2[n])*t+(2*p0[n]-5*v+4*p2[n]-p3[n])*t2+(-p0[n]+3*v-3*p2[n]+p3[n])*t3));
+   const ra=radii[Math.min(i,radii.length-1)]||.001, rb=radii[Math.min(i+1,radii.length-1)]||.001;
+   knots.push([c,Math.max(.002,ra*(1-t)+rb*t)]);
+  }
+  knots.push([points[points.length-1],Math.max(.002,radii[radii.length-1]||.002)]);
+  const rings=[];
+  for(let i=0;i<knots.length;i++){
+   const [pos,r]=knots[i], direction=unit(diff(knots[Math.min(knots.length-1,i+1)][0],knots[Math.max(i-1,0)][0]));
+   let bin=unit(cross(direction,Math.abs(direction[1])>.94?[1,0,0]:[0,1,0]));
+   let nor=unit(cross(direction,bin));
+   rings.push(Array.from({length:radial},(_,k)=>{const a=k*2*Math.PI/radial;const n=add(bin.map(x=>x*Math.cos(a)),nor.map(x=>x*Math.sin(a)));return [add(pos,n.map(x=>x*r)),n];}));
+  }
+  for(let i=0;i<rings.length-1;i++)for(let k=0;k<radial;k++){
+   let l=(k+1)%radial, a=rings[i][k],b=rings[i][l],c=rings[i+1][k],d=rings[i+1][l];
+   this.tri(a[0],c[0],b[0],color,shine,a[1],c[1],b[1]);
+   this.tri(b[0],c[0],d[0],color,shine,b[1],c[1],d[1]);
+  }
+ }
+ poly(points,color,z,shine=.2){
+  for(let i=1;i<points.length-1;i++)this.tri([points[0][0],points[0][1],z],[points[i][0],points[i][1],z],[points[i+1][0],points[i+1][1],z],color,shine,[0,0,1],[0,0,1],[0,0,1]);
+ }
+ // Tapered, volumetric loft: rings contain {y, rx, rz, x?, z?}
+ loft(rings,color,shine=.1,radial=24){
+  const nodes=rings.map(r=>Array.from({length:radial},(_,i)=>{const a=i*2*Math.PI/radial;return [(r.x||0)+r.rx*Math.cos(a),r.y,(r.z||0)+r.rz*Math.sin(a)]}));
+  for(let j=0;j<nodes.length-1;j++)for(let k=0;k<radial;k++)this.quad(nodes[j][k],nodes[j][(k+1)%radial],nodes[j+1][(k+1)%radial],nodes[j+1][k],color,shine);
+ }
+}
+
+function buildChild(raw) {
+ const c=normalizeCharacter(raw), m=new MeshBuilder(), girl=c.gender==='girl';
+ const skin=hexRGB(SKINS[c.skin]), rosy=mix(skin,[1,.32,.35],.18);
+ const skinSh=lighten(SKINS[c.skin],.17), hair=hexRGB(HAIRS[c.hairColor]);
+ const hairHi=lighten(HAIRS[c.hairColor],.15),hairLow=darken(HAIRS[c.hairColor],.19);
+ const textile=hexRGB(CLOTHES[c.outfitColor]);
+ const pants=hexRGB(BOTTOM_COLORS[c.bottomColor]);
+ const shoe=hexRGB(SHOE_COLORS[c.shoeColor]);
+ const white=hexRGB('#fff9f4'),sole=hexRGB('#f9fcff');
+ const faceWidth=c.face==='round'?1.08:c.face==='soft'?.97:1;
+ const headX=0,headY=1.47, headZ=.1;
+ const customOutfit=['doctor','firefighter','builder'].includes(c.outfit);
+ let dress=c.outfit==='dress';
+ const topColor=c.outfit==='doctor'?hexRGB('#effcff'):c.outfit==='firefighter'?hexRGB('#cc4b45'):c.outfit==='builder'?hexRGB('#e8bd52'):textile;
+ // Back hair, silhouettes through many individually modeled strands.
+ const length=(c.hair==='waves'||c.hair==='long')?1.35:c.hair==='ponytail'?.98:c.hair==='bob'?.84:c.hair==='curly'?.83:.15;
+ if(length>.2){
+  m.ell(0,1.22,-.42,.78,1.0,.38,hairLow,.2);
+  for(let side of [-1,1])for(let i=0;i<9;i++){
+   const t=i/8, x=side*(.45+t*.28), yend=1.02-length*(.75+t*.22);
+   const phase=i*1.7+(girl?.3:0);
+   m.tube([[x*.78,1.88,-.22],[x,1.36,-.34],[x+side*.12,1.1,-.2],[x+side*.04+Math.sin(phase)*.05,yend+.35,.04],[x+side*.06+Math.sin(phase)*.14,yend,.03]],
+     [.20,.17,.155,.10,.008],i%4===0?hairHi:hair,.18,9,3);
+  }
+ }
+ // Legs, socks and shoes.
+ for(const s of [-1,1]){
+   const x=s*.285;
+   m.ell(x,-1.02,.0,.22,.40,.23,skin,.1);
+   m.tube([[x,-.88,.02],[x+s*.035,-1.33,.035],[x+s*.01,-1.94,.04]], [.23,.195,.13],skin,.10,14,6);
+   m.ell(x,-1.89,.06,.166,.23,.165,skin,.1);
+   if(c.shoes!=='sandals'){
+    m.ell(x,-1.94,.06,.175,.19,.176,white,.16);
+    for(let a=0;a<2;a++) m.tube([[x-.16,-1.97+a*.075,.205],[x+.16,-1.97+a*.075,.205]],[.010,.010],shoe,.05,6,2);
+   }
+   m.ell(x,-2.13,.22,.265,.125,.39,sole,.43);
+   m.ell(x,-2.062,.25,.23,.151,.32,shoe,.36);
+   m.ell(x,-2.03,.48,.215,.10,.115,lighten(SHOE_COLORS[c.shoeColor],.24),.31);
+   for(let k=0;k<3;k++)m.tube([[x-.105,-1.99+k*.042,.48-k*.062],[x+.105,-1.99+k*.042,.48-k*.062]],[.014,.014],white,.15,6,2);
+   m.tube([[x-.22,-2.15,.1],[x-.24,-2.15,.31],[x-.19,-2.14,.50]],[.022,.022,.018],hexRGB('#e3ddd5'),.1);
+ }
+ // Pants: independently changeable shorts / jeans / cargo / skirt.
+ if(c.bottom==='skirt'||dress){
+  m.loft([{y:-.30,rx:.45,rz:.28},{y:-.51,rx:.52,rz:.36},{y:dress?-1.13:-.91,rx:dress?.73:.69,rz:dress?.45:.42}],dress?topColor:pants);
+  for(let s of [-1,1])m.tube([[s*.30,-.5,.32],[s*.49,-.82,.29]],[.012,.012],lighten(BOTTOM_COLORS[c.bottomColor],.2),.12);
+ } else{
+  m.loft([{y:-.32,rx:.44,rz:.27},{y:-.54,rx:.47,rz:.30}],pants);
+  for(const s of [-1,1]){
+   m.loft([{y:-.5,rx:.245,rz:.26,x:s*.235},{y:c.bottom==='jeans'?-1.88:-.97,rx:.257,rz:.25,x:s*.26}],pants);
+   m.tube([[s*.48,-.75,.0],[s*.49,-.88,.0]],[.012,.012],darken(BOTTOM_COLORS[c.bottomColor],.12),.08);
+   if(c.bottom==='cargo'){
+    m.ell(s*.43,-.75,.225,.155,.18,.046,lighten(BOTTOM_COLORS[c.bottomColor],.10),.1);
+    m.tube([[s*.34,-.69,.27],[s*.49,-.69,.25]],[.015,.015],darken(BOTTOM_COLORS[c.bottomColor],.2));
+   }
+  }
+  m.tube([[-.44,-.33,.245],[.44,-.33,.245]],[.015,.015],lighten(BOTTOM_COLORS[c.bottomColor],.25),.06);
+  m.ell(0,-.36,.29,.032,.034,.019,hexRGB('#e0ba73'),.4);
+ }
+ // Body and outfit, with cloth volume and seams.
+ m.loft([{y:-.46,rx:.34,rz:.245},{y:-.34,rx:.38,rz:.30},{y:.33,rx:.51,rz:.34},{y:.65,rx:.39,rz:.265}],topColor,.09);
+ if(c.outfit==='hoodie'){
+  m.ell(0,.72,-.21,.49,.50,.28,topColor,.10);
+  m.tube([[-.17,.55,.352],[-.13,.29,.375]],[.025,.018],white,.1);
+  m.tube([[.17,.55,.352],[.13,.29,.375]],[.025,.018],white,.1);
+ }
+ if(c.outfit==='overalls'){
+  m.ell(0,-.16,.31,.25,.38,.040,pants,.1);
+  for(let s of [-1,1])m.tube([[s*.22,.12,.31],[s*.26,.48,.27]],[.12,.13],pants,.1,8,2);
+ }
+ if(c.outfit==='casual'&&!customOutfit){
+  if(girl){
+    m.ell(0,.18,.353,.135,.100,.014,hexRGB('#ed80a8'),.19);
+    m.ell(-.066,.225,.368,.07,.059,.014,hexRGB('#ed80a8'),.19);
+    m.ell(.066,.225,.368,.07,.059,.014,hexRGB('#ed80a8'),.19);
+  }else{
+    m.poly([[-.20,.12],[-.03,.37],[.10,.19],[.19,.31],[.33,.10]],hexRGB('#54876c'),.355);
+    m.poly([[.0,.15],[.10,.28],[.18,.16]],hexRGB('#d7e5b2'),.365);
+  }
+ }
+ if(c.outfit==='sport'){
+  m.tube([[-.22,-.39,.25],[-.22,.42,.31]],[.018,.018],white,.04);
+  m.tube([[.22,-.39,.25],[.22,.42,.31]],[.018,.018],white,.04);
+ }
+ for(const s of [-1,1]){
+   // Shoulder and arms: organic tubes, palms, separate little fingers.
+   m.ell(s*.48,.44,.01,.25,.27,.28,topColor,.1);
+   m.tube([[s*.50,.49,.0],[s*.66,.10,.02]],[.22,.19],topColor,.11,13,5);
+   m.tube([[s*.66,.13,.025],[s*.69,-.39,.16],[s*.69,-.79,.22]],[.153,.137,.12],skin,.13,12,5);
+   m.ell(s*.70,-.83,.24,.138,.215,.11,skinSh,.14);
+   m.tube([[s*.60,-.80,.27],[s*.56,-.91,.28]],[.057,.013],skin,.13,8,3);
+   // T-shirt sleeve stitching
+   m.tube([[s*.53,.18,.15],[s*.63,.13,.19],[s*.72,.11,.1]],[.012,.012,.010],lighten(CLOTHES[c.outfitColor],.20),.1);
+ }
+ // Neck and shaped head.
+ const headVertexStart=m.p.length/3;
+ m.ell(0,.76,.08,.185,.30,.185,skin,.12);
+ let headRx=.735*faceWidth,headRy=c.face==='round'?.76:.84;
+ m.ell(headX,headY,headZ,headRx,headRy,.61,skin,.2);
+ for(const s of [-1,1]){
+  m.ell(s*.70*faceWidth,1.49,.03,.165,.23,.10,skin,.13);
+  m.ell(s*.731*faceWidth,1.48,.121,.068,.139,.025,rosy,.04);
+  m.ell(s*.45,1.25,.61,.245,.14,.048,rosy,.08);
+ }
+ // Eyes: dimensional sclera, iris, black pupil, bright multi-point catchlights.
+ const eyesScale=c.eyes==='wide'?1.14:c.eyes==='almond'?.89:1;
+ for(const s of [-1,1]){
+  const ex=s*.30,ey=1.55,ez=.623;
+  m.ell(ex,ey,ez,.198*eyesScale,.245*eyesScale,.095,hexRGB('#fffaf7'),.48);
+  m.ell(ex-s*.014,ey-.013,ez+.092,.127*eyesScale,.169*eyesScale,.045,hexRGB(EYES[c.eyeColor]),.7);
+  m.ell(ex-s*.019,ey-.015,ez+.127,.072*eyesScale,.126*eyesScale,.038,hexRGB('#21191d'),.85);
+  m.ell(ex-.042,ey+.073,ez+.165,.044,.052,.018,white,.98);
+  m.ell(ex+.044,ey-.035,ez+.163,.022,.024,.012,white,.98);
+  m.tube([[ex-.165,ey+.19,ez+.03],[ex,ey+.231,ez+.085],[ex+.165,ey+.17,ez+.03]],
+    [.016,.026,.012],hexRGB('#3c2a27'),.08,8,3);
+  const browLift=c.brows==='arched'?.09:c.brows==='straight'?.0:.05;
+  m.tube([[ex-.19,1.92+browLift,.54],[ex,1.975+browLift,.65],[ex+.2,1.91+browLift,.54]],
+    [.034,.055,.030],hairLow,.15,9,4);
+ }
+ // Nose in front of the face and natural smile.
+ const noseR=c.nose==='tiny'?.060:c.nose==='soft'?.075:.086;
+ m.ell(0,1.34,.703,noseR,.090,.105,skinSh,.25);
+ if(c.mouth==='wow')m.ell(0,1.05,.669,.088,.106,.022,hexRGB('#993f53'),.1);
+ else{
+  const lift=c.mouth==='grin'?.068:c.mouth==='gentle'?.025:.053;
+  m.tube([[-.19,1.115+lift,.63],[-.09,1.085,.695],[0,1.067,.710],[.11,1.085,.695],[.19,1.115+lift,.63]],
+    [.015,.021,.025,.021,.014],hexRGB('#98535a'),.07,8,3);
+  if(c.mouth==='grin')m.ell(0,1.077,.706,.122,.022,.01,white,.15);
+ }
+ // Tiny freckles / baby blush.
+ if(girl||c.accessory==='freckles')for(let s of [-1,1])for(let i=0;i<4;i++)
+  m.ell(s*(.38+i*.055),1.31+(i%2)*.043,.636-(i*.022),.018,.018,.012,hexRGB('#b97659'),.06);
+ // Hair, many individually curved locks and non-flat layered volume.
+ m.ell(0,2.055,-.04,.78, .48,.64,hair,.25);
+ for(let i=0;i<12;i++){
+  let a=i/11*Math.PI,xx=(i-5.5)*.118;
+  let tip=[xx*.84,1.97-(i%3)*.055,.71-(Math.abs(xx)*.28)];
+  m.tube([[xx*.86,2.37,-.06],[xx+(i%2?.05:-.05),2.29,.39],[xx*.89,2.11,.62],tip],
+    [.10,.11,.09,.008],i%4===0?hairHi:(i%4===1?hairLow:hair),.22,9,4);
+ }
+ if(c.hair==='waves'||c.hair==='long'||c.hair==='bob'||c.hair==='ponytail'){
+   for(let s of [-1,1])for(let j=0;j<6;j++){
+     let xx=s*(.58+j*.035), end=c.hair==='bob'?.69:c.hair==='long'?-1.10:-.55;
+     m.tube([[xx*.8,2.18,.16],[xx,1.76,.23],[xx+s*.12,1.32,.30],[xx+s*.05, .80,.28],[xx+s*.13,end,.18]],
+      [.125,.125,.12,.093,.006],j%3===0?hairHi:hair,.21,9,3);
+   }
+ }
+ if(c.hair==='curly'){
+  for(let i=0;i<28;i++){let a=i*2.399,y=2.12+Math.cos(a*1.7)*.36,x=Math.sin(a)*.65,z=.20+Math.cos(a)*.38;
+   m.ell(x,y,z,.22,.21,.23,i%4===0?hairHi:hair,.21);
+  }
+ }
+ if(c.hair==='spiky'||(c.hair==='tousled'&&!girl)){
+   for(let i=0;i<10;i++){
+    let x=(i-4.5)*.14, yy=2.32+(i%4)*.085;
+    m.tube([[x,2.22,.06],[x+(i%2?.13:-.11),yy+.20,.16],[x+(i%2?.19:-.17),yy+.36,.18]],
+      [.19,.13,.006],i%3===0?hairHi:hair,.2,9,4);
+   }
+ }
+ if((girl&&(c.hair==='waves'||c.hair==='ponytail'))||c.hair==='ponytail'){
+   m.ell(.07,2.48,-.21,.33,.29,.30,hair,.2);
+   for(let i=0;i<7;i++)m.tube([[.05,2.67,-.19],[Math.cos(i)*.19+.05,2.79,-.2],[Math.cos(i*2)*.17+.05,2.51,-.01]],
+     [.11,.13,.01],i%3===0?hairHi:hair,.14,8,4);
+ }
+ // Accessories; no stickers or flat-image compositions.
+ if(c.accessory==='glasses'){
+  for(let s of [-1,1]){
+   const xx=s*.30;
+   m.tube([[xx-.21,1.59,.71],[xx,1.76,.73],[xx+.21,1.59,.71],[xx,1.43,.73],[xx-.21,1.59,.71]],
+     [.025,.025,.025,.025,.025],hexRGB('#353b53'),.4,8,4);
+  }
+  m.tube([[-.095,1.64,.74],[.095,1.64,.74]],[.025,.025],hexRGB('#353b53'),.4);
+ }
+ if(c.accessory==='bow'){
+  m.ell(.52,2.26,.46,.19,.12,.065,hexRGB('#e97fa5'),.2,.45);
+  m.ell(.76,2.26,.46,.19,.12,.065,hexRGB('#e97fa5'),.2,-.45);
+  m.ell(.64,2.26,.48,.08,.10,.09,hexRGB('#ffbad0'),.2);
+ }
+ if(c.accessory==='cap'){
+  m.ell(0,2.28,.0,.76,.27,.60,hexRGB('#e38aab'),.25);
+  m.ell(0,2.20,.57,.44,.07,.32,hexRGB('#e38aab'),.25);
+ }
+ if(c.accessory==='backpack'){
+  m.ell(0,.07,-.38,.40,.67,.26,hexRGB('#ad91df'),.16);
+  for(let s of [-1,1])m.tube([[s*.31,.54,.08],[s*.45,.11,.30]],[.062,.062],hexRGB('#8b70c0'),.1);
+ }
+ if(c.accessory==='band')m.tube([[-.71,1.9,.24],[-.46,2.28,.46],[0,2.51,.47],[.46,2.28,.46],[.71,1.9,.24]],
+  [.03,.05,.05,.05,.03],hexRGB('#dd90bd'),.45,10,4);
+ if(customOutfit){
+  if(c.outfit==='doctor')for(let s of [-1,1])m.tube([[s*.17,.57,.35],[s*.08,-.35,.29]],[.020,.020],hexRGB('#7bc4d8'),.12);
+  if(c.outfit==='firefighter')for(let s of [-1,1])m.tube([[s*.3,-.13,.34],[s*.3,.32,.35]],[.045,.045],hexRGB('#ffdf75'),.2);
+ }
+ // Kids anatomy: preserve full-sized limbs and shrink the oversized face/hair
+ // around its root, so the full figure has friendly 4-to-5-head proportions.
+ for(let v=headVertexStart;v<m.p.length/3;v++){
+  const i=v*3; const ratio=.875;
+  m.p[i]*=ratio;
+  m.p[i+1]=.86+(m.p[i+1]-.86)*ratio;
+  m.p[i+2]=.06+(m.p[i+2]-.06)*ratio;
+ }
+ return {p:new Float32Array(m.p),n:new Float32Array(m.n),c:new Float32Array(m.c),gloss:new Float32Array(m.gloss),triangles:m.p.length/9};
+}
+
+const VERTEX=`attribute vec3 aPosition;attribute vec3 aNormal;attribute vec3 aColor;attribute float aGloss;
+uniform float uYaw;uniform float uTilt;uniform float uScale;uniform float uAspect;uniform float uY;
+varying vec3 vColor;varying vec3 vNormal;varying float vGloss;varying vec3 vPos;
+void main(){float cs=cos(uYaw),sn=sin(uYaw);vec3 p=aPosition;vec3 q=vec3(p.x*cs+p.z*sn,p.y,-p.x*sn+p.z*cs);
+float ct=cos(uTilt),st=sin(uTilt);vec3 pos=vec3(q.x,q.y*ct-q.z*st,q.y*st+q.z*ct);
+vec3 n=aNormal;vec3 nr=vec3(n.x*cs+n.z*sn,n.y,-n.x*sn+n.z*cs);
+vNormal=normalize(vec3(nr.x,nr.y*ct-nr.z*st,nr.y*st+nr.z*ct));
+float perspective=1.0+pos.z*0.023;
+gl_Position=vec4(pos.x*uScale/(uAspect*perspective),(pos.y+uY)*uScale/perspective,-pos.z*.05,1.0);
+vColor=aColor;vGloss=aGloss;vPos=pos;
+}`;
+const FRAGMENT=`precision mediump float;varying vec3 vColor;varying vec3 vNormal;varying float vGloss;varying vec3 vPos;
+void main(){vec3 n=normalize(vNormal);vec3 sun=normalize(vec3(.38,.76,.67));float diff=max(0.,dot(n,sun));float fill=max(0.,dot(n,normalize(vec3(-.75,.33,.48))));
+float warm=max(0.,dot(n,normalize(vec3(.2,.2,-1.))));float light=.52+.39*diff+.12*fill+.07*warm;
+vec3 lit=vColor*light;vec3 h=normalize(sun+vec3(0.,0.,1.));float spec=pow(max(0.,dot(n,h)),33.)*.18*vGloss;
+vec3 col=lit+vec3(spec,spec*.96,spec*.90);
+gl_FragColor=vec4(pow(clamp(col,0.,1.),vec3(.96)),1.);
+}`;
+// Software projection of the SAME triangle meshes for browsers with WebGL disabled.
+// This is an actual 3D mesh renderer with depth ordering and directional light,
+// not a vector-avatar or pre-rendered static picture.
+function drawSoftware(canvas,mesh,opts){
+ const box=canvas.getBoundingClientRect();
+ const w=Math.max(55,Math.min(720,Math.round((box.width||240)*1.15)));
+ const h=Math.max(60,Math.min(650,Math.round((box.height||280)*1.15)));
+ canvas.width=w;canvas.height=h;
+ const ctx=canvas.getContext('2d');if(!ctx)return;
+ const image=ctx.createImageData(w,h),data=image.data,zbuffer=new Float32Array(w*h);
+ zbuffer.fill(-Infinity);
+ const yaw=opts.yaw||0, cs=Math.cos(yaw),sn=Math.sin(yaw),scale=opts.headOnly?.76:.36,offset=opts.headOnly?-1.49:-.18;
+ const pos=mesh.p, normals=mesh.n, colors=mesh.c;
+ const l=unit([.38,.76,.67]), l2=unit([-.75,.33,.48]);
+ const count=pos.length/3, coords=new Float32Array(count*3), lightCol=new Uint8Array(count*3);
+ for(let i=0;i<count;i++){
+  const j=i*3,x=pos[j],y=pos[j+1],z=pos[j+2],xr=x*cs+z*sn,zr=-x*sn+z*cs;
+  coords[j]=w/2+(xr*scale/(w/h))*w/2;coords[j+1]=h/2-(y+offset)*scale*h/2;coords[j+2]=zr;
+  const nx=normals[j]*cs+normals[j+2]*sn,ny=normals[j+1],nz=-normals[j]*sn+normals[j+2]*cs;
+  const light=.57+.36*Math.max(0,nx*l[0]+ny*l[1]+nz*l[2])+.12*Math.max(0,nx*l2[0]+ny*l2[1]+nz*l2[2]);
+  lightCol[j]=Math.min(255,Math.round(colors[j]*light*255));
+  lightCol[j+1]=Math.min(255,Math.round(colors[j+1]*light*255));
+  lightCol[j+2]=Math.min(255,Math.round(colors[j+2]*light*255));
+ }
+ for(let i=0;i<count;i+=3){
+  const a=i*3,b=a+3,c=a+6;
+  const ax=coords[a],ay=coords[a+1],bx=coords[b],by=coords[b+1],cx=coords[c],cy=coords[c+1];
+  let minX=Math.max(0,Math.floor(Math.min(ax,bx,cx))),maxX=Math.min(w-1,Math.ceil(Math.max(ax,bx,cx)));
+  let minY=Math.max(0,Math.floor(Math.min(ay,by,cy))),maxY=Math.min(h-1,Math.ceil(Math.max(ay,by,cy)));
+  if(minX>maxX||minY>maxY)continue;
+  const area=(by-cy)*(ax-cx)+(cx-bx)*(ay-cy);
+  if(Math.abs(area)<.0001)continue;
+  const inv=1/area;
+  for(let yy=minY;yy<=maxY;yy++)for(let xx=minX;xx<=maxX;xx++){
+    const px=xx+.5,py=yy+.5;
+    const k0=((by-cy)*(px-cx)+(cx-bx)*(py-cy))*inv;
+    if(k0<0||k0>1)continue;
+    const k1=((cy-ay)*(px-cx)+(ax-cx)*(py-cy))*inv;
+    if(k1<0||k1>1)continue;
+    const k2=1-k0-k1;if(k2<0)continue;
+    const depth=k0*coords[a+2]+k1*coords[b+2]+k2*coords[c+2];
+    const off=yy*w+xx;if(depth<=zbuffer[off])continue;
+    zbuffer[off]=depth;
+    const rgba=off*4;
+    data[rgba]=k0*lightCol[a]+k1*lightCol[b]+k2*lightCol[c];
+    data[rgba+1]=k0*lightCol[a+1]+k1*lightCol[b+1]+k2*lightCol[c+1];
+    data[rgba+2]=k0*lightCol[a+2]+k1*lightCol[b+2]+k2*lightCol[c+2];
+    data[rgba+3]=255;
+  }
+ }
+ ctx.putImageData(image,0,0);
+}
+
+function initGL(canvas){
+ const gl=canvas.getContext('webgl',{alpha:true,antialias:true,depth:true,premultipliedAlpha:false,preserveDrawingBuffer:false})||canvas.getContext('experimental-webgl');
+ if(!gl)return null;
+ const shader=(kind,src)=>{const a=gl.createShader(kind);gl.shaderSource(a,src);gl.compileShader(a);if(!gl.getShaderParameter(a,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(a));return a};
+ const pr=gl.createProgram();gl.attachShader(pr,shader(gl.VERTEX_SHADER,VERTEX));gl.attachShader(pr,shader(gl.FRAGMENT_SHADER,FRAGMENT));gl.linkProgram(pr);
+ if(!gl.getProgramParameter(pr,gl.LINK_STATUS)) throw Error(gl.getProgramInfoLog(pr));
+ const a=['aPosition','aNormal','aColor','aGloss'].map(n=>gl.getAttribLocation(pr,n));
+ const u=Object.fromEntries(['uYaw','uTilt','uScale','uAspect','uY'].map(n=>[n,gl.getUniformLocation(pr,n)]));
+ gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LESS);gl.disable(gl.CULL_FACE);
+ return {gl,pr,a,u};
+}
+function uploadMesh(g,geometry){
+ const {gl}=g;g.buffers=[];
+ for(const [i,arr,cols] of [[0,geometry.p,3],[1,geometry.n,3],[2,geometry.c,3],[3,geometry.gloss,1]]){
+  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,arr,gl.STATIC_DRAW);g.buffers.push([b,cols]);
+ }
+ g.length=geometry.p.length/3;
+}
+function draw(g,opts,now){
+ const {gl}=g,canvas=gl.canvas;
+ if(!canvas.isConnected)return;
+ const {width,height}=canvas.getBoundingClientRect();if(width<2||height<2)return;
+ const dpr=Math.min(2,window.devicePixelRatio||1);const w=Math.round(width*dpr),h=Math.round(height*dpr);
+ if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+ gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ gl.useProgram(g.pr);const idle=opts.animated&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ gl.uniform1f(g.u.uYaw,opts.yaw+(idle?Math.sin(now/2300)*.025:0));
+ gl.uniform1f(g.u.uTilt,-.025);
+ gl.uniform1f(g.u.uAspect,w/h);
+ gl.uniform1f(g.u.uScale,opts.headOnly?.76:.36);
+ gl.uniform1f(g.u.uY,opts.headOnly?-1.49:-.18);
+ for(let i=0;i<g.buffers.length;i++){
+  const [b,cols]=g.buffers[i];gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.enableVertexAttribArray(g.a[i]);gl.vertexAttribPointer(g.a[i],cols,gl.FLOAT,false,0,0);
+ }
+ gl.drawArrays(gl.TRIANGLES,0,g.length);
+}
+const sessions=new Set();
+function unmount(){for(const s of sessions){if(s.raf)cancelAnimationFrame(s.raf);const g=s.g;
+ if(g){for(const [b] of(g.buffers||[]))g.gl.deleteBuffer(b);g.gl.deleteProgram(g.pr);try{g.gl.getExtension('WEBGL_lose_context')?.loseContext()}catch{}}
+} sessions.clear()}
+function mount(){
+ unmount();
+ document.querySelectorAll('[data-avatar3d]').forEach(holder=>{
+  const canvas=holder.querySelector('canvas');if(!canvas)return;
+  try{
+   const data=JSON.parse(decodeURIComponent(holder.dataset.avatar3d));
+   const geometry=buildChild(data);
+   const g=initGL(canvas);
+   if(!g){
+    const opts={headOnly:holder.classList.contains('head-model'),yaw:0};
+    holder.classList.add('avatar3d-software');
+    drawSoftware(canvas,geometry,opts);
+    if(holder.classList.contains('stage-model')){
+      let last=null;
+      canvas.addEventListener('pointerdown',e=>{last=e.clientX;canvas.setPointerCapture(e.pointerId)});
+      canvas.addEventListener('pointermove',e=>{if(last===null)return;opts.yaw=Math.max(-.7,Math.min(.7,opts.yaw+(e.clientX-last)*.010));last=e.clientX;});
+      canvas.addEventListener('pointerup',()=>{last=null;drawSoftware(canvas,geometry,opts)});
+      canvas.addEventListener('pointercancel',()=>last=null);
+    }
+    return;
+   }
+   uploadMesh(g,geometry);
+   const opts={animated:holder.classList.contains('stage-model'),headOnly:holder.classList.contains('head-model'),yaw:0};
+   const s={g,opts,raf:0}; sessions.add(s);
+   const frame=now=>{if(!canvas.isConnected)return;draw(g,opts,now);if(opts.animated)s.raf=requestAnimationFrame(frame)};
+   frame(0);
+   if(holder.classList.contains('stage-model')){
+    holder.setAttribute('title','Поверни героя мышью или пальцем');
+    let last=null;
+    canvas.addEventListener('pointerdown',e=>{last=e.clientX;canvas.setPointerCapture(e.pointerId)});
+    canvas.addEventListener('pointermove',e=>{if(last===null)return;opts.yaw=Math.max(-.8,Math.min(.8,opts.yaw+(e.clientX-last)*.010));last=e.clientX;});
+    canvas.addEventListener('pointerup',()=>last=null);
+    canvas.addEventListener('pointercancel',()=>last=null);
+   }
+  }catch(err){console.error('БудуБуду WebGL персонаж:',err);holder.classList.add('avatar3d-unsupported');holder.dataset.error='3D-персонаж не загрузился';}
+ });
+}
+// API stays compatible with the existing game. Original 2D code is not used for characters.
+window.Budu3D={mount,unmount,buildChild,version:WEBGL_VERSION};
+window.buduAvatarMarkup=function(raw,extraClass=''){
+ const c=normalizeCharacter(raw);
+ const data=encodeURIComponent(JSON.stringify(c));
+ const kind=extraClass.includes('mini')?'head-model':extraClass.includes('base-character')?'head-model':extraClass==='character-mini'?'head-model':'';
+ const stage=(!extraClass || extraClass==='')?'stage-model':'';
+ return `<span class="avatar-model3d ${extraClass} ${kind} ${stage}" data-avatar3d="${data}"><canvas aria-label="Объёмный персонаж ${c.gender==='girl'?'девочка':'мальчик'}" role="img"></canvas></span>`;
+};
+})();
+
+// Bind the original game API to the new 3D engine; never display the legacy SVG avatar.
+avatarSVG = window.buduAvatarMarkup;
 
 const STORAGE_KEY = "gorod-professiy-mvp-v1";
 
@@ -583,9 +975,11 @@ function finishBuilds() {
 
 function render() {
   finishBuilds();
+  window.Budu3D?.unmount();
   const app = document.querySelector("#app");
   app.innerHTML = state.onboarded ? renderGame() : renderOnboarding();
   bindEvents();
+  window.Budu3D?.mount();
 }
 
 function renderOnboarding() {
